@@ -5,7 +5,7 @@
 void run(std::string source) {
     Scanner scanner(source);
 
-    std::list<Token>& tokens = scanner.scan_tokens();
-    for (Token tok : tokens)
-        std::cout << tok;
+    std::list<std::shared_ptr<Token>>& tokens = scanner.scan_tokens();
+    for (auto tok : tokens)
+        std::cout << *tok;
 }

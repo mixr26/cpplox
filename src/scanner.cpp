@@ -185,13 +185,13 @@ void Scanner::scan_token() {
 }
 
 // Begin the scanning process.
-std::list<Token>& Scanner::scan_tokens() {
+std::list<std::shared_ptr<Token>>& Scanner::scan_tokens() {
     while (!is_at_end()) {
         // We are at the beginning of the next lexeme.
         scan_token();
     }
 
     // END token signalizes the end of the token stream.
-    tokens.emplace_back(Token(TokenType::END, "", 0));
+    add_token(TokenType::END, "", 0);
     return tokens;
 }

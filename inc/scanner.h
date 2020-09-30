@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <unordered_map>
+#include <memory>
 
 #include "error_handling.h"
 
@@ -38,6 +39,11 @@ class Token {
 public:
     Token(TokenType type, std::string lexeme, uint32_t line, double value = 0.)
         : type(type), lexeme(lexeme), line(line), value(value) {}
+    Token(const Token&) = default;
+    Token(Token&&) = default;
+    ~Token() = default;
+    Token& operator=(Token&) = default;
+    Token& operator=(Token&&) = default;
 
     // Overloaded operator for printing the token.
     friend std::ostream& operator<<(std::ostream& os, const Token& tok);
@@ -49,7 +55,7 @@ class Scanner {
     // Name of the source file.
     std::string source;
     // Stream of valid tokens.
-    std::list<Token> tokens;
+    std::list<std::shared_ptr<Token>> tokens;
 
     // Current character number.
     uint32_t current;
@@ -93,10 +99,10 @@ class Scanner {
 
     // Add new token to the token stream.
     void add_token(TokenType type, std::string lexeme) {
-        tokens.emplace_back(Token(type, lexeme, line));
+        tokens.emplace_back(std::make_shared<Token>(type, lexeme, line));
     }
     void add_token(TokenType type, std::string lexeme, double value) {
-        tokens.emplace_back(Token(type, lexeme, line, value));
+        tokens.emplace_back(std::make_shared<Token>(type, lexeme, line, value));
     }
 public:
     Scanner(std::string source);
@@ -107,7 +113,7 @@ public:
     Scanner& operator=(Scanner&&) = delete;
 
     // Begin the scanning process.
-    std::list<Token>& scan_tokens();
+    std::list<std::shared_ptr<Token>>& scan_tokens();
 };
 
 #endif // __SCANNER_H
