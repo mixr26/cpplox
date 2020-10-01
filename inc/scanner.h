@@ -45,6 +45,10 @@ public:
     Token& operator=(Token&) = default;
     Token& operator=(Token&&) = default;
 
+    TokenType get_type() { return type; }
+    const std::string& get_lexeme() const { return lexeme; }
+    double get_value() { return value; }
+
     // Overloaded operator for printing the token.
     friend std::ostream& operator<<(std::ostream& os, const Token& tok);
 };
