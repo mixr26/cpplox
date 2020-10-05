@@ -27,8 +27,8 @@ Scanner::Scanner(std::string source)
     : source(source), current(0U), line(1U) {
     filestream.open(source);
     if (!filestream.is_open()) {
-        had_error = true;
-        error(line, "Input file not opened correctly!");
+        error_handling::had_error = true;
+        error_handling::error(line, "Input file not opened correctly!");
         exit(1);
     }
 
@@ -61,7 +61,7 @@ void Scanner::string_lit() {
 
     // Unterminated string.
     if (is_at_end()) {
-        error(line, "Unterminated string!");
+        error_handling::error(line, "Unterminated string!");
         return;
     }
 
@@ -175,7 +175,7 @@ void Scanner::scan_token() {
         rollback();
         identifier();
         break;
-    default: error(line, "Unexpected character!"); break;
+    default: error_handling::error(line, "Unexpected character!"); break;
     }
 }
 

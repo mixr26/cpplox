@@ -2,6 +2,8 @@
 
 #include "error_handling.h"
 
+namespace error_handling {
+
 bool had_error = false;
 
 void error(uint32_t line, std::string msg) {
@@ -19,4 +21,6 @@ void report(uint32_t line, std::string where, std::string msg) {
     std::cout << "[line " << line << "] Error" << where << ": "
               << msg << std::endl;
     had_error = true;
+}
+
 }

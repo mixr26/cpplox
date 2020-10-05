@@ -3,17 +3,18 @@
 #include "tree.h"
 #include "ast_printer.h"
 #include "parser.h"
+#include "error_handling.h"
 
 // Run the interpreter.
 void run(std::string source) {
     Scanner scanner(source);
-
-    /*
-    std::list<std::shared_ptr<Token>> tokens = scanner.scan_tokens();
-    for (auto tok : tokens)
-        std::cout << *tok;
-    */
     Parser parser(scanner.scan_tokens());
+
+    if (error_handling::had_error)
+        return;
+
+    std::shared_ptr<Ast_printer> printer = std::make_shared<Ast_printer>();
+    std::cout << printer->print(parser.parse());
 }
 
 void test_printer() {
