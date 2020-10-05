@@ -20,7 +20,8 @@ public:
     void visit_literal_expr(const std::shared_ptr<Literal> expr) override;
 
     std::string&& print(std::shared_ptr<Expr> expr) {
-        expr->accept(shared_from_this());
+        if (expr != nullptr)
+            expr->accept(shared_from_this());
         return std::move(result);
     }
 };
