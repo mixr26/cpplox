@@ -95,7 +95,7 @@ std::shared_ptr<Expr> Parser::equality() {
            || match(TokenType::EQUAL_EQUAL)) {
         std::shared_ptr<Token> op = previous();
         std::shared_ptr<Expr> right = comparison();
-        expr = std::make_shared<Binary>(expr, right, op);
+        expr = std::make_shared<Binary_expr>(expr, right, op);
     }
 
     return expr;
@@ -110,7 +110,7 @@ std::shared_ptr<Expr> Parser::comparison() {
            || match(TokenType::LESS_EQUAL)) {
         std::shared_ptr<Token> op = previous();
         std::shared_ptr<Expr> right = addition();
-        expr = std::make_shared<Binary>(expr, right, op);
+        expr = std::make_shared<Binary_expr>(expr, right, op);
     }
 
     return expr;
@@ -123,7 +123,7 @@ std::shared_ptr<Expr> Parser::addition() {
            || match(TokenType::PLUS)) {
         std::shared_ptr<Token> op = previous();
         std::shared_ptr<Expr> right = multiplication();
-        expr = std::make_shared<Binary>(expr, right, op);
+        expr = std::make_shared<Binary_expr>(expr, right, op);
     }
 
     return expr;
@@ -136,7 +136,7 @@ std::shared_ptr<Expr> Parser::multiplication() {
            || match(TokenType::STAR)) {
         std::shared_ptr<Token> op = previous();
         std::shared_ptr<Expr> right = unary();
-        expr = std::make_shared<Binary>(expr, right, op);
+        expr = std::make_shared<Binary_expr>(expr, right, op);
     }
 
     return expr;
@@ -147,7 +147,7 @@ std::shared_ptr<Expr> Parser::unary() {
         || match(TokenType::MINUS)) {
         std::shared_ptr<Token> op = previous();
         std::shared_ptr<Expr> right = unary();
-        return std::make_shared<Unary>(right, op);
+        return std::make_shared<Unary_expr>(right, op);
     }
 
     return primary();
@@ -159,11 +159,11 @@ std::shared_ptr<Expr> Parser::primary() {
         || match(TokenType::NIL)
         || match(TokenType::STRING)
         || match(TokenType::NUMBER))
-        return std::make_shared<Literal>(previous());
+        return std::make_shared<Literal_expr>(previous());
     else if (match(TokenType::LEFT_PAREN)) {
         std::shared_ptr<Expr> expr = expression();
         consume(TokenType::RIGHT_PAREN, "Expect ')' after expression!");
-        return std::make_shared<Grouping>(expr);
+        return std::make_shared<Grouping_expr>(expr);
     } else
         throw error(peek(), "Expect expression!");
 }

@@ -14,10 +14,10 @@ public:
     Ast_printer& operator=(Ast_printer&) = delete;
     Ast_printer& operator=(Ast_printer&&) = delete;
 
-    void visit_binary_expr(const std::shared_ptr<Binary> expr) override;
-    void visit_unary_expr(const std::shared_ptr<Unary> expr) override;
-    void visit_grouping_expr(const std::shared_ptr<Grouping> expr) override;
-    void visit_literal_expr(const std::shared_ptr<Literal> expr) override;
+    void visit_binary_expr(const std::shared_ptr<Binary_expr> expr) override;
+    void visit_unary_expr(const std::shared_ptr<Unary_expr> expr) override;
+    void visit_grouping_expr(const std::shared_ptr<Grouping_expr> expr) override;
+    void visit_literal_expr(const std::shared_ptr<Literal_expr> expr) override;
 
     std::string&& print(std::shared_ptr<Expr> expr) {
         if (expr != nullptr)
