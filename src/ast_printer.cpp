@@ -1,5 +1,6 @@
 #include <cassert>
 #include <sstream>
+#include <memory>
 
 #include "ast_printer.h"
 

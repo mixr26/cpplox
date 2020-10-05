@@ -1,10 +1,5 @@
 #include "scanner.h"
-
-// Overloaded operator for printing the token.
-std::ostream& operator<<(std::ostream& os, const Token& tok) {
-    os << static_cast<uint32_t>(tok.type) << " " << tok.lexeme << std::endl;
-    return os;
-}
+#include "error_handling.h"
 
 // Hash map of the language's keywords.
 const Scanner::keywords_map Scanner::keywords = {
@@ -185,7 +180,7 @@ void Scanner::scan_token() {
 }
 
 // Begin the scanning process.
-std::list<std::shared_ptr<Token>>& Scanner::scan_tokens() {
+std::list<std::shared_ptr<Token>>&& Scanner::scan_tokens() {
     while (!is_at_end()) {
         // We are at the beginning of the next lexeme.
         scan_token();
@@ -193,5 +188,5 @@ std::list<std::shared_ptr<Token>>& Scanner::scan_tokens() {
 
     // END token signalizes the end of the token stream.
     add_token(TokenType::END, "", 0);
-    return tokens;
+    return std::move(tokens);
 }

@@ -1,7 +1,9 @@
 #ifndef __TREE_H
 #define __TREE_H
 
-#include "scanner.h"
+#include <memory>
+
+#include "token.h"
 
 // Forward declarations.
 class Binary;

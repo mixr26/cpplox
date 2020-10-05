@@ -8,50 +8,7 @@
 #include <unordered_map>
 #include <memory>
 
-#include "error_handling.h"
-
-// Enum class representing all token types.
-enum class TokenType : uint8_t {
-    // Single character tokens.
-    LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
-    COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR,
-    // One or two character tokens.
-    BANG, BANG_EQUAL,
-    EQUAL, EQUAL_EQUAL,
-    GREATER, GREATER_EQUAL,
-    LESS, LESS_EQUAL,
-    // Literals.
-    IDENTIFIER, STRING, NUMBER,
-    // Keywords.
-    AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR,
-    PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
-
-    END
-};
-
-class Token {
-    TokenType type;
-    std::string lexeme;
-    // Line on which the token appears.
-    uint32_t line;
-    // For NUMBER tokens, contains the real number value.
-    double value;
-public:
-    Token(TokenType type, std::string lexeme, uint32_t line, double value = 0.)
-        : type(type), lexeme(lexeme), line(line), value(value) {}
-    Token(const Token&) = default;
-    Token(Token&&) = default;
-    ~Token() = default;
-    Token& operator=(Token&) = default;
-    Token& operator=(Token&&) = default;
-
-    TokenType get_type() { return type; }
-    const std::string& get_lexeme() const { return lexeme; }
-    double get_value() { return value; }
-
-    // Overloaded operator for printing the token.
-    friend std::ostream& operator<<(std::ostream& os, const Token& tok);
-};
+#include "token.h"
 
 class Scanner {
     using keywords_map = std::unordered_map<std::string, TokenType>;
@@ -117,7 +74,7 @@ public:
     Scanner& operator=(Scanner&&) = delete;
 
     // Begin the scanning process.
-    std::list<std::shared_ptr<Token>>& scan_tokens();
+    std::list<std::shared_ptr<Token>>&& scan_tokens();
 };
 
 #endif // __SCANNER_H
