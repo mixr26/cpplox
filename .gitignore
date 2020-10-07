@@ -1,5 +1,5 @@
 *.config
-*.creator
+*.creator*
 *.files
 *.includes
 
