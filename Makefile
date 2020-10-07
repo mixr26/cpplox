@@ -21,7 +21,7 @@ CP  = ${PREFIX}objcopy
 OD  = ${PREFIX}objdump
 SZ  = ${PREFIX}size
 
-CXXFLAGS = -Wall -std=c++14 -O0 -g
+CXXFLAGS = -Wall -std=c++17 -O0 -g
 CXXFLAGS += -I./$(INC_DIR)
 
 LFLAGS  = -L./$(OUT_DIR)/$(LIB_DIR)
