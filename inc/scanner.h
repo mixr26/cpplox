@@ -11,7 +11,7 @@
 #include "token.h"
 
 class Scanner {
-    using keywords_map = std::unordered_map<std::string, TokenType>;
+    using keywords_map = std::unordered_map<std::string, Token_type>;
 
     // Name of the source file.
     std::string source;
@@ -59,10 +59,10 @@ class Scanner {
     bool is_alphanum(char c) { return is_digit(c) || is_alpha(c); }
 
     // Add new token to the token stream.
-    void add_token(TokenType type, std::string lexeme) {
+    void add_token(Token_type type, std::string lexeme) {
         tokens.emplace_back(std::make_shared<Token>(type, lexeme, line));
     }
-    void add_token(TokenType type, std::string lexeme, double value) {
+    void add_token(Token_type type, std::string lexeme, double value) {
         tokens.emplace_back(std::make_shared<Token>(type, lexeme, line, value));
     }
 public:

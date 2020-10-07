@@ -11,7 +11,7 @@ void error(uint32_t line, std::string msg) {
 }
 
 void error(std::shared_ptr<Token> tok, std::string msg) {
-    if (tok->get_type() == TokenType::END)
+    if (tok->get_type() == Token_type::END)
         report(tok->get_line(), "at end", msg);
     else
         report(tok->get_line(), " at '" + tok->get_lexeme() + "'", msg);

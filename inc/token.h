@@ -6,7 +6,7 @@
 #include <ostream>
 
 // Enum class representing all token types.
-enum class TokenType : uint8_t {
+enum class Token_type : uint8_t {
     // Single character tokens.
     LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
     COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR,
@@ -25,14 +25,14 @@ enum class TokenType : uint8_t {
 };
 
 class Token {
-    TokenType type;
+    Token_type type;
     std::string lexeme;
     // Line on which the token appears.
     uint32_t line;
     // For NUMBER tokens, contains the real number value.
     double value;
 public:
-    Token(TokenType type, std::string lexeme, uint32_t line, double value = 0.)
+    Token(Token_type type, std::string lexeme, uint32_t line, double value = 0.)
         : type(type), lexeme(lexeme), line(line), value(value) {}
     Token(const Token&) = default;
     Token(Token&&) = default;
@@ -40,7 +40,7 @@ public:
     Token& operator=(Token&) = default;
     Token& operator=(Token&&) = default;
 
-    TokenType get_type() { return type; }
+    Token_type get_type() { return type; }
     const std::string& get_lexeme() const { return lexeme; }
     uint32_t get_line() { return line; }
     double get_value() { return value; }

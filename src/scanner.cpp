@@ -3,22 +3,22 @@
 
 // Hash map of the language's keywords.
 const Scanner::keywords_map Scanner::keywords = {
-    {"and" , TokenType::AND},
-    {"class", TokenType::CLASS},
-    {"else", TokenType::ELSE},
-    {"false", TokenType::FALSE},
-    {"for", TokenType::FOR},
-    {"fun", TokenType::FUN},
-    {"if", TokenType::IF},
-    {"nil", TokenType::NIL},
-    {"or", TokenType::OR},
-    {"print", TokenType::PRINT},
-    {"return", TokenType::RETURN},
-    {"super", TokenType::SUPER},
-    {"this", TokenType::THIS},
-    {"true", TokenType::TRUE},
-    {"var", TokenType::VAR},
-    {"while", TokenType::WHILE}
+    {"and" , Token_type::AND},
+    {"class", Token_type::CLASS},
+    {"else", Token_type::ELSE},
+    {"false", Token_type::FALSE},
+    {"for", Token_type::FOR},
+    {"fun", Token_type::FUN},
+    {"if", Token_type::IF},
+    {"nil", Token_type::NIL},
+    {"or", Token_type::OR},
+    {"print", Token_type::PRINT},
+    {"return", Token_type::RETURN},
+    {"super", Token_type::SUPER},
+    {"this", Token_type::THIS},
+    {"true", Token_type::TRUE},
+    {"var", Token_type::VAR},
+    {"while", Token_type::WHILE}
 };
 
 // Scanner constructor. Opens the input stream and checks the size of the
@@ -68,7 +68,7 @@ void Scanner::string_lit() {
     // The closing ".
     advance();
 
-    add_token(TokenType::STRING, lexeme);
+    add_token(Token_type::STRING, lexeme);
 }
 
 // Helper method which recognizes number literals.
@@ -89,7 +89,7 @@ void Scanner::num_lit() {
             lexeme.push_back(advance());
     }
 
-    add_token(TokenType::NUMBER, lexeme, atof(lexeme.c_str()));
+    add_token(Token_type::NUMBER, lexeme, atof(lexeme.c_str()));
 }
 
 // Helper method which recognizes keywords and identifiers.
@@ -105,7 +105,7 @@ void Scanner::identifier() {
     // If this lexeme matches a keyword, set the matching token type.
     auto type = keywords.find(lexeme);
     if (type == keywords.end())
-        add_token(TokenType::IDENTIFIER, lexeme);
+        add_token(Token_type::IDENTIFIER, lexeme);
     else
         add_token(type->second, lexeme);
 }
@@ -116,50 +116,50 @@ void Scanner::scan_token() {
     char c = advance();
 
     switch (c) {
-    case '(': add_token(TokenType::LEFT_PAREN, "("); break;
-    case ')': add_token(TokenType::RIGHT_PAREN, ")"); break;
-    case '{': add_token(TokenType::LEFT_BRACE, "{"); break;
-    case '}': add_token(TokenType::RIGHT_BRACE, "}"); break;
-    case ',': add_token(TokenType::COMMA, ","); break;
-    case '.': add_token(TokenType::DOT, "."); break;
-    case '-': add_token(TokenType::MINUS, "-"); break;
-    case '+': add_token(TokenType::PLUS, "+"); break;
-    case ';': add_token(TokenType::SEMICOLON, ";"); break;
-    case '*': add_token(TokenType::STAR, "*"); break;
+    case '(': add_token(Token_type::LEFT_PAREN, "("); break;
+    case ')': add_token(Token_type::RIGHT_PAREN, ")"); break;
+    case '{': add_token(Token_type::LEFT_BRACE, "{"); break;
+    case '}': add_token(Token_type::RIGHT_BRACE, "}"); break;
+    case ',': add_token(Token_type::COMMA, ","); break;
+    case '.': add_token(Token_type::DOT, "."); break;
+    case '-': add_token(Token_type::MINUS, "-"); break;
+    case '+': add_token(Token_type::PLUS, "+"); break;
+    case ';': add_token(Token_type::SEMICOLON, ";"); break;
+    case '*': add_token(Token_type::STAR, "*"); break;
     case '!':
         if (match('=')) {
             advance();
-            add_token(TokenType::BANG_EQUAL, "!=");
+            add_token(Token_type::BANG_EQUAL, "!=");
         } else
-            add_token(TokenType::BANG, "!");
+            add_token(Token_type::BANG, "!");
         break;
     case '=':
         if (match('=')) {
             advance();
-            add_token(TokenType::EQUAL_EQUAL, "==");
+            add_token(Token_type::EQUAL_EQUAL, "==");
         } else
-            add_token(TokenType::EQUAL, "=");
+            add_token(Token_type::EQUAL, "=");
         break;
     case '<':
         if (match('=')) {
             advance();
-            add_token(TokenType::LESS_EQUAL, "<=");
+            add_token(Token_type::LESS_EQUAL, "<=");
         } else
-            add_token(TokenType::LESS, "<");
+            add_token(Token_type::LESS, "<");
         break;
     case '>':
         if (match('=')) {
             advance();
-            add_token(TokenType::GREATER_EQUAL, ">=");
+            add_token(Token_type::GREATER_EQUAL, ">=");
         } else
-            add_token(TokenType::GREATER, ">");
+            add_token(Token_type::GREATER, ">");
         break;
     case '/':
         if (match('/')) {
             while(!match('\n') && !is_at_end())
                 advance();
         } else
-            add_token(TokenType::SLASH, "/");
+            add_token(Token_type::SLASH, "/");
         break;
     case '\n': line++; break;
     case ' ':
@@ -187,6 +187,6 @@ std::list<std::shared_ptr<Token>>&& Scanner::scan_tokens() {
     }
 
     // END token signalizes the end of the token stream.
-    add_token(TokenType::END, "", 0);
+    add_token(Token_type::END, "", 0);
     return std::move(tokens);
 }

@@ -42,15 +42,15 @@ void Ast_printer::visit_grouping_expr(const std::shared_ptr<Grouping_expr> expr)
 }
 
 void Ast_printer::visit_literal_expr(const std::shared_ptr<Literal_expr> expr) {
-    TokenType token_type = expr->get_literal()->get_type();
-    assert(token_type == TokenType::NIL
-           || token_type == TokenType::STRING
-           || token_type == TokenType::NUMBER);
+    Token_type token_type = expr->get_literal()->get_type();
+    assert(token_type == Token_type::NIL
+           || token_type == Token_type::STRING
+           || token_type == Token_type::NUMBER);
 
-    if (token_type == TokenType::NIL)
+    if (token_type == Token_type::NIL)
         result += "nil";
-    else if (token_type == TokenType::STRING
-             || token_type == TokenType::NUMBER) {
+    else if (token_type == Token_type::STRING
+             || token_type == Token_type::NUMBER) {
         result += expr->get_literal()->get_lexeme();
     }
 }

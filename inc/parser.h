@@ -19,9 +19,9 @@ class Parser {
     token_iterator current;
 
     // If the next token matches the expected, advance the token stream.
-    bool match(TokenType type);
+    bool match(Token_type type);
     // Whether the next token matches the expected.
-    bool check(TokenType type);
+    bool check(Token_type type);
     // Advance the token stream.
     std::shared_ptr<Token> advance();
     // Whether the current token signalizes the end of the token stream.
@@ -32,7 +32,7 @@ class Parser {
     std::shared_ptr<Token> previous();
     // Check whether the next token matches the expected and advance the stream
     // if it does. Conversely, throw an error.
-    std::shared_ptr<Token> consume(TokenType type, std::string msg);
+    std::shared_ptr<Token> consume(Token_type type, std::string msg);
 
     // Discard the (possibly) erroneous tokens until we see one of the
     // synchronization tokens. Called after the parser reports an error.
