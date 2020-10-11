@@ -18,6 +18,7 @@ class Parser {
     // Currently processed token.
     token_iterator current;
 
+    // List of program statements.
     std::list<std::shared_ptr<Stmt>> statements;
 
     // If the next token matches the expected, advance the token stream.
@@ -64,7 +65,7 @@ public:
     Parser& operator=(Parser&&) = delete;
 
     // Parse the token stream and return the root of the AST.
-    std::list<std::shared_ptr<Stmt>>& parse();
+    std::list<std::shared_ptr<Stmt>>&& parse();
 };
 
 #endif // __PARSER_H

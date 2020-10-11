@@ -10,6 +10,7 @@ void Interpreter::evaluate(std::shared_ptr<Expr> expr) {
     expr->accept(shared_from_this());
 }
 
+// Execute a statement. Just a wrapper around the call to accept method.
 void Interpreter::execute(std::shared_ptr<Stmt> stmt) {
     stmt->accept(shared_from_this());
 }
@@ -173,17 +174,19 @@ void Interpreter::visit_binary_expr(const std::shared_ptr<Binary_expr> expr) {
     }
 }
 
+// Interpret an expression statement.
 void Interpreter::visit_expression_stmt(const std::shared_ptr<Expression_stmt> stmt) {
     evaluate(stmt->get_expr());
 }
 
+// Interpret a print statement.
 void Interpreter::visit_print_stmt(const std::shared_ptr<Print_stmt> stmt) {
     evaluate(stmt->get_expr());
     std::cout << result << std::endl;
 }
 
 // Start the interpreter run.
-void Interpreter::interpret(std::list<std::shared_ptr<Stmt>>& statements) {
+void Interpreter::interpret(std::list<std::shared_ptr<Stmt>>&& statements) {
     try {
         for (auto stmt : statements)
             execute(stmt);

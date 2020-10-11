@@ -16,6 +16,7 @@ class Interpreter : public Expr_visitor,
 
     // Evaluate an expression. Just a wrapper around the call to accept method.
     void evaluate(std::shared_ptr<Expr> expr);
+    // Execute a statement. Just a wrapper around the call to accept method.
     void execute(std::shared_ptr<Stmt> stmt);
     // Is the literal considered to be TRUE.
     bool is_truthy();
@@ -42,7 +43,7 @@ public:
     void visit_print_stmt(const std::shared_ptr<Print_stmt> stmt) override;
 
     // Start the interpreter run.
-    void interpret(std::list<std::shared_ptr<Stmt>>& statements);
+    void interpret(std::list<std::shared_ptr<Stmt>>&& statements);
     // Get the result of the interpreter run.
     Literal get_result() { return result; }
 };
