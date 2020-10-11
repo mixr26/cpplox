@@ -18,6 +18,8 @@ class Parser {
     // Currently processed token.
     token_iterator current;
 
+    std::list<std::shared_ptr<Stmt>> statements;
+
     // If the next token matches the expected, advance the token stream.
     bool match(Token_type type);
     // Whether the next token matches the expected.
@@ -42,6 +44,9 @@ class Parser {
     Parse_error error(std::shared_ptr<Token> tok, std::string msg);
 
     // Methods which represent the grammar nonterminals.
+    std::shared_ptr<Stmt> statement();
+    std::shared_ptr<Stmt> print_statement();
+    std::shared_ptr<Stmt> expression_statement();
     std::shared_ptr<Expr> expression();
     std::shared_ptr<Expr> equality();
     std::shared_ptr<Expr> comparison();
@@ -59,7 +64,7 @@ public:
     Parser& operator=(Parser&&) = delete;
 
     // Parse the token stream and return the root of the AST.
-    std::shared_ptr<Expr> parse();
+    std::list<std::shared_ptr<Stmt>>& parse();
 };
 
 #endif // __PARSER_H

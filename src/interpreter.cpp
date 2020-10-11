@@ -1,5 +1,6 @@
 #include <cassert>
 #include <type_traits>
+#include <iostream>
 
 #include "interpreter.h"
 #include "error_handling.h"
@@ -7,6 +8,10 @@
 // Evaluate an expression. Just a wrapper around the call to accept method.
 void Interpreter::evaluate(std::shared_ptr<Expr> expr) {
     expr->accept(shared_from_this());
+}
+
+void Interpreter::execute(std::shared_ptr<Stmt> stmt) {
+    stmt->accept(shared_from_this());
 }
 
 // Is the literal considered to be TRUE.
@@ -168,10 +173,20 @@ void Interpreter::visit_binary_expr(const std::shared_ptr<Binary_expr> expr) {
     }
 }
 
+void Interpreter::visit_expression_stmt(const std::shared_ptr<Expression_stmt> stmt) {
+    evaluate(stmt->get_expr());
+}
+
+void Interpreter::visit_print_stmt(const std::shared_ptr<Print_stmt> stmt) {
+    evaluate(stmt->get_expr());
+    std::cout << result << std::endl;
+}
+
 // Start the interpreter run.
-void Interpreter::interpret(std::shared_ptr<Expr> expr) {
+void Interpreter::interpret(std::list<std::shared_ptr<Stmt>>& statements) {
     try {
-        evaluate(expr);
+        for (auto stmt : statements)
+            execute(stmt);
     } catch (Runtime_error& e) {
         error_handling::error(e.get_token(), e.what());
     }

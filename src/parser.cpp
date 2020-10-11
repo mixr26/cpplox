@@ -84,6 +84,24 @@ Parser::Parse_error Parser::error(std::shared_ptr<Token> tok, std::string msg) {
 
 // Methods which represent the grammar nonterminals.
 
+std::shared_ptr<Stmt> Parser::statement() {
+    if (match(Token_type::PRINT))
+        return print_statement();
+    return expression_statement();
+}
+
+std::shared_ptr<Stmt> Parser::print_statement() {
+    std::shared_ptr<Expr> expr = expression();
+    consume(Token_type::SEMICOLON, "Expect ';' after value!");
+    return std::make_shared<Print_stmt>(expr);
+}
+
+std::shared_ptr<Stmt> Parser::expression_statement() {
+    std::shared_ptr<Expr> expr = expression();
+    consume(Token_type::SEMICOLON, "Expect ';' after value!");
+    return std::make_shared<Expression_stmt>(expr);
+}
+
 std::shared_ptr<Expr> Parser::expression() {
     return equality();
 }
@@ -169,10 +187,14 @@ std::shared_ptr<Expr> Parser::primary() {
 }
 
 // Parse the token stream and return the root of the AST.
-std::shared_ptr<Expr> Parser::parse() {
+std::list<std::shared_ptr<Stmt>>& Parser::parse() {
     try {
-        return expression();
+        while (!is_at_end())
+            statements.emplace_back(statement());
+
+        return statements;
     } catch (Parse_error err) {
-        return nullptr;
+        statements.clear();
+        return statements;
     }
 }

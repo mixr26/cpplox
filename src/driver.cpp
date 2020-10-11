@@ -12,12 +12,10 @@ void run(std::string source) {
     Parser parser(scanner.scan_tokens());
     std::shared_ptr<Interpreter> interpreter = std::make_shared<Interpreter>();
 
-    interpreter->interpret(parser.parse());
-
     if (error_handling::had_error)
         return;
 
-    std::cout << interpreter->get_result() << std::endl;
+    interpreter->interpret(parser.parse());
 
     //std::shared_ptr<Ast_printer> printer = std::make_shared<Ast_printer>();
     //std::cout << printer->print(parser.parse());

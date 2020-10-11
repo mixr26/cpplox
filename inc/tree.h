@@ -135,4 +135,76 @@ public:
     }
 };
 
+// The following classes describe statement nodes of the AST.
+
+// Forward declarations.
+class Expression_stmt;
+class Print_stmt;
+
+// Visitor class for statement nodes.
+class Stmt_visitor {
+public:
+    Stmt_visitor() = default;
+    Stmt_visitor(const Stmt_visitor&) = delete;
+    Stmt_visitor(Stmt_visitor&&) = delete;
+    ~Stmt_visitor() = default;
+    Stmt_visitor& operator=(Stmt_visitor&) = delete;
+    Stmt_visitor& operator=(Stmt_visitor&&) = delete;
+
+    virtual void visit_expression_stmt(const std::shared_ptr<Expression_stmt> stmt) = 0;
+    virtual void visit_print_stmt(const std::shared_ptr<Print_stmt> stmt) = 0;
+};
+
+// Parent class for statement nodes
+class Stmt {
+public:
+    Stmt() = default;
+    Stmt(const Stmt&) = default;
+    Stmt(Stmt&&) = default;
+    virtual ~Stmt() = default;
+    Stmt& operator=(Stmt&) = default;
+    Stmt& operator=(Stmt&&) = default;
+
+    // Pure virtual accept method of the visitor pattern.
+    virtual void accept(const std::shared_ptr<Stmt_visitor> visitor) = 0;
+};
+
+// Statement node describing expression statements.
+class Expression_stmt : public Stmt,
+                        public std::enable_shared_from_this<Expression_stmt> {
+    std::shared_ptr<Expr> expr;
+public:
+    Expression_stmt(std::shared_ptr<Expr> expr) : Stmt(), expr(expr) {}
+    Expression_stmt(const Expression_stmt&) = default;
+    Expression_stmt(Expression_stmt&&) = default;
+    virtual ~Expression_stmt() = default;
+    Expression_stmt& operator=(Expression_stmt&) = default;
+    Expression_stmt& operator=(Expression_stmt&&) = default;
+
+    std::shared_ptr<Expr> get_expr() { return expr; }
+
+    void accept(const std::shared_ptr<Stmt_visitor> visitor) override  {
+        visitor->visit_expression_stmt(shared_from_this());
+    }
+};
+
+// Statement node describing the print statement.
+class Print_stmt : public Stmt,
+                   public std::enable_shared_from_this<Print_stmt> {
+    std::shared_ptr<Expr> expr;
+public:
+    Print_stmt(std::shared_ptr<Expr> expr) : Stmt(), expr(expr) {}
+    Print_stmt(const Print_stmt&) = default;
+    Print_stmt(Print_stmt&&) = default;
+    virtual ~Print_stmt() = default;
+    Print_stmt& operator=(Print_stmt&) = default;
+    Print_stmt& operator=(Print_stmt&&) = default;
+
+    std::shared_ptr<Expr> get_expr() { return expr; }
+
+    void accept(const std::shared_ptr<Stmt_visitor> visitor) override  {
+        visitor->visit_print_stmt(shared_from_this());
+    }
+};
+
 #endif // __TREE_H
