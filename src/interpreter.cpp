@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "interpreter.h"
+#include "runtime_error.h"
 #include "error_handling.h"
 
 // Evaluate an expression. Just a wrapper around the call to accept method.
@@ -13,6 +14,18 @@ void Interpreter::evaluate(std::shared_ptr<Expr> expr) {
 // Execute a statement. Just a wrapper around the call to accept method.
 void Interpreter::execute(std::shared_ptr<Stmt> stmt) {
     stmt->accept(shared_from_this());
+}
+
+// Execute statements which compose a block.
+void Interpreter::execute_block(std::list<std::shared_ptr<Stmt>>& statements,
+                                std::shared_ptr<Environment> environment) {
+    std::shared_ptr<Environment> previous = this->environment;
+
+    this->environment = environment;
+    for (auto statement : statements)
+        execute(statement);
+
+    this->environment = previous;
 }
 
 // Is the literal considered to be TRUE.
@@ -174,6 +187,18 @@ void Interpreter::visit_binary_expr(const std::shared_ptr<Binary_expr> expr) {
     }
 }
 
+// Interpret a variable use.
+void Interpreter::visit_variable_expr(const std::shared_ptr<Variable_expr> expr) {
+    result = environment->get(expr->get_name());
+}
+
+// Interpret a variable assignment.
+void Interpreter::visit_assign_expr(const std::shared_ptr<Assign_expr> expr) {
+    evaluate(expr->get_value());
+
+    environment->assign(expr->get_name(), result);
+}
+
 // Interpret an expression statement.
 void Interpreter::visit_expression_stmt(const std::shared_ptr<Expression_stmt> stmt) {
     evaluate(stmt->get_expr());
@@ -183,6 +208,24 @@ void Interpreter::visit_expression_stmt(const std::shared_ptr<Expression_stmt> s
 void Interpreter::visit_print_stmt(const std::shared_ptr<Print_stmt> stmt) {
     evaluate(stmt->get_expr());
     std::cout << result << std::endl;
+}
+
+// Interpret a variable declaration.
+void Interpreter::visit_var_stmt(const std::shared_ptr<Var_stmt> stmt) {
+    Literal value;
+    value.value = nullptr;
+    if (stmt->get_initializer() != nullptr) {
+        evaluate(stmt->get_initializer());
+        value = result;
+    }
+
+    environment->define(stmt->get_name()->get_lexeme(), value);
+}
+
+// Interpret a block of statements.
+void Interpreter::visit_block_stmt(const std::shared_ptr<Block_stmt> stmt) {
+    execute_block(stmt->get_statements(),
+                  std::make_shared<Environment>(environment));
 }
 
 // Start the interpreter run.

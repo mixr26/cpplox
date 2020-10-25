@@ -1,3 +1,5 @@
+#include <typeinfo>
+
 #include "parser.h"
 #include "error_handling.h"
 
@@ -84,9 +86,34 @@ Parser::Parse_error Parser::error(std::shared_ptr<Token> tok, std::string msg) {
 
 // Methods which represent the grammar nonterminals.
 
+std::shared_ptr<Stmt> Parser::declaration() {
+    try {
+        if (match(Token_type::VAR))
+            return var_declaration();
+        return statement();
+    } catch (Parse_error& e) {
+        synchronize();
+        return nullptr;
+    }
+}
+
+std::shared_ptr<Stmt> Parser::var_declaration() {
+    std::shared_ptr<Token> name = consume(Token_type::IDENTIFIER,
+                                          "Expect variable name!");
+
+    std::shared_ptr<Expr> initializer = nullptr;
+    if (match(Token_type::EQUAL))
+        initializer = expression();
+
+    consume(Token_type::SEMICOLON, "Expect ';' after variable declaration!");
+    return std::make_shared<Var_stmt>(name, initializer);
+}
+
 std::shared_ptr<Stmt> Parser::statement() {
     if (match(Token_type::PRINT))
         return print_statement();
+    if (match(Token_type::LEFT_BRACE))
+        return std::make_shared<Block_stmt>(block());
     return expression_statement();
 }
 
@@ -102,8 +129,34 @@ std::shared_ptr<Stmt> Parser::expression_statement() {
     return std::make_shared<Expression_stmt>(expr);
 }
 
+std::list<std::shared_ptr<Stmt>> Parser::block() {
+    std::list<std::shared_ptr<Stmt>> statements;
+
+    while (!check(Token_type::RIGHT_BRACE) && !is_at_end())
+        statements.emplace_back(declaration());
+
+    consume(Token_type::RIGHT_BRACE, "Expect '}' after block!");
+    return statements;
+}
+
 std::shared_ptr<Expr> Parser::expression() {
-    return equality();
+    return assignment();
+}
+
+std::shared_ptr<Expr> Parser::assignment() {
+    std::shared_ptr<Expr> expr = equality();
+
+    if (match(Token_type::EQUAL)) {
+        std::shared_ptr<Token> equals = previous();
+        std::shared_ptr<Expr> value = assignment();
+
+        std::shared_ptr<Expr> assign = expr->make_assignment_expr(expr, value);
+        if (assign != nullptr)
+            return assign;
+        error(equals, "Invalid assignment target!");
+    }
+
+    return expr;
 }
 
 std::shared_ptr<Expr> Parser::equality() {
@@ -178,6 +231,8 @@ std::shared_ptr<Expr> Parser::primary() {
         || match(Token_type::STRING)
         || match(Token_type::NUMBER))
         return std::make_shared<Literal_expr>(previous());
+    else if (match(Token_type::IDENTIFIER))
+        return std::make_shared<Variable_expr>(previous());
     else if (match(Token_type::LEFT_PAREN)) {
         std::shared_ptr<Expr> expr = expression();
         consume(Token_type::RIGHT_PAREN, "Expect ')' after expression!");
@@ -188,13 +243,7 @@ std::shared_ptr<Expr> Parser::primary() {
 
 // Parse the token stream and return the root of the AST.
 std::list<std::shared_ptr<Stmt>>&& Parser::parse() {
-    try {
-        while (!is_at_end())
-            statements.emplace_back(statement());
-
-        return std::move(statements);
-    } catch (Parse_error err) {
-        statements.clear();
-        return std::move(statements);
-    }
+    while (!is_at_end())
+        statements.emplace_back(declaration());
+    return std::move(statements);
 }

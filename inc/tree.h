@@ -2,6 +2,7 @@
 #define __TREE_H
 
 #include <memory>
+#include <list>
 
 #include "token.h"
 
@@ -10,6 +11,8 @@ class Binary_expr;
 class Unary_expr;
 class Grouping_expr;
 class Literal_expr;
+class Variable_expr;
+class Assign_expr;
 
 // The following classes describe expression nodes of the AST.
 
@@ -27,6 +30,8 @@ public:
     virtual void visit_unary_expr(const std::shared_ptr<Unary_expr> expr) = 0;
     virtual void visit_grouping_expr(const std::shared_ptr<Grouping_expr> expr) = 0;
     virtual void visit_literal_expr(const std::shared_ptr<Literal_expr> expr) = 0;
+    virtual void visit_variable_expr(const std::shared_ptr<Variable_expr> expr) = 0;
+    virtual void visit_assign_expr(const std::shared_ptr<Assign_expr> expr) = 0;
 };
 
 // Parent class for expression nodes.
@@ -44,6 +49,9 @@ public:
     // anything, instead it will save the return value ins the visitor
     // object state.
     virtual void accept(const std::shared_ptr<Expr_visitor> visitor) = 0;
+
+    virtual std::shared_ptr<Expr> make_assignment_expr(std::shared_ptr<Expr> left,
+                                                       std::shared_ptr<Expr> right) { return nullptr; }
 };
 
 // Expression node describing binary operations.
@@ -135,11 +143,63 @@ public:
     }
 };
 
+// Expression node describing a variable.
+class Variable_expr : public Expr,
+                      public std::enable_shared_from_this<Variable_expr> {
+    std::shared_ptr<Token> name;
+public:
+    Variable_expr(std::shared_ptr<Token> name)
+        : Expr(), name(name) {}
+    Variable_expr(const Variable_expr&) = default;
+    Variable_expr(Variable_expr&&) = default;
+    virtual ~Variable_expr() = default;
+    Variable_expr& operator=(Variable_expr&) = default;
+    Variable_expr& operator=(Variable_expr&&) = default;
+
+    std::shared_ptr<Token> get_name() { return name; }
+
+    void accept(const std::shared_ptr<Expr_visitor> visitor) override  {
+        visitor->visit_variable_expr(shared_from_this());
+    }
+
+    std::shared_ptr<Expr> make_assignment_expr(std::shared_ptr<Expr> left,
+                                               std::shared_ptr<Expr> right) {
+        std::shared_ptr<Assign_expr> assign =
+                std::make_shared<Assign_expr>(std::dynamic_pointer_cast<Variable_expr>(left)->get_name(),
+                                              right);
+        return std::static_pointer_cast<Expr>(assign);
+    }
+};
+
+// Expression node describing an assignment.
+class Assign_expr : public Expr,
+                    public std::enable_shared_from_this<Assign_expr> {
+    std::shared_ptr<Token> name;
+    std::shared_ptr<Expr> value;
+public:
+    Assign_expr(std::shared_ptr<Token> name, std::shared_ptr<Expr> value)
+        : Expr(), name(name), value(value) {}
+    Assign_expr(const Assign_expr&) = default;
+    Assign_expr(Assign_expr&&) = default;
+    virtual ~Assign_expr() = default;
+    Assign_expr& operator=(Assign_expr&) = default;
+    Assign_expr& operator=(Assign_expr&&) = default;
+
+    std::shared_ptr<Token> get_name() { return name; }
+    std::shared_ptr<Expr> get_value() { return value; }
+
+    void accept(const std::shared_ptr<Expr_visitor> visitor) override  {
+        visitor->visit_assign_expr(shared_from_this());
+    }
+};
+
 // The following classes describe statement nodes of the AST.
 
 // Forward declarations.
 class Expression_stmt;
 class Print_stmt;
+class Var_stmt;
+class Block_stmt;
 
 // Visitor class for statement nodes.
 class Stmt_visitor {
@@ -153,6 +213,8 @@ public:
 
     virtual void visit_expression_stmt(const std::shared_ptr<Expression_stmt> stmt) = 0;
     virtual void visit_print_stmt(const std::shared_ptr<Print_stmt> stmt) = 0;
+    virtual void visit_var_stmt(const std::shared_ptr<Var_stmt> stmt) = 0;
+    virtual void visit_block_stmt(const std::shared_ptr<Block_stmt> stmt) = 0;
 };
 
 // Parent class for statement nodes
@@ -206,5 +268,49 @@ public:
         visitor->visit_print_stmt(shared_from_this());
     }
 };
+
+// Statement node describing the variable declaration statement.
+class Var_stmt : public Stmt,
+                 public std::enable_shared_from_this<Var_stmt> {
+    std::shared_ptr<Token> name;
+    std::shared_ptr<Expr> initializer;
+public:
+    Var_stmt(std::shared_ptr<Token> name,
+             std::shared_ptr<Expr> initializer = nullptr)
+        : Stmt(), name(name), initializer(initializer) {}
+    Var_stmt(const Var_stmt&) = default;
+    Var_stmt(Var_stmt&&) = default;
+    virtual ~Var_stmt() = default;
+    Var_stmt& operator=(Var_stmt&) = default;
+    Var_stmt& operator=(Var_stmt&&) = default;
+
+    std::shared_ptr<Expr> get_initializer() { return initializer; }
+    std::shared_ptr<Token> get_name() { return name; }
+
+    void accept(const std::shared_ptr<Stmt_visitor> visitor) override  {
+        visitor->visit_var_stmt(shared_from_this());
+    }
+};
+
+// Statement node describing a block of statements.
+class Block_stmt : public Stmt,
+                   public std::enable_shared_from_this<Block_stmt> {
+    std::list<std::shared_ptr<Stmt>> statements;
+public:
+    Block_stmt(std::list<std::shared_ptr<Stmt>>&& statements)
+        : statements(statements) {}
+    Block_stmt(const Block_stmt&) = default;
+    Block_stmt(Block_stmt&&) = default;
+    virtual ~Block_stmt() = default;
+    Block_stmt& operator=(Block_stmt&) = default;
+    Block_stmt& operator=(Block_stmt&&) = default;
+
+    std::list<std::shared_ptr<Stmt>>& get_statements() { return statements; }
+
+    void accept(const std::shared_ptr<Stmt_visitor> visitor) override  {
+        visitor->visit_block_stmt(shared_from_this());
+    }
+};
+
 
 #endif // __TREE_H
