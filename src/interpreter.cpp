@@ -199,6 +199,21 @@ void Interpreter::visit_assign_expr(const std::shared_ptr<Assign_expr> expr) {
     environment->assign(expr->get_name(), result);
 }
 
+// Interpret a logical expression.
+void Interpreter::visit_logical_expr(const std::shared_ptr<Logical_expr> expr) {
+    evaluate(expr->get_left());
+
+    if (expr->get_op()->get_type() == Token_type::OR) {
+        if (is_truthy())
+            return;
+    } else {
+        if (!is_truthy())
+            return;
+    }
+
+    evaluate(expr->get_right());
+}
+
 // Interpret an expression statement.
 void Interpreter::visit_expression_stmt(const std::shared_ptr<Expression_stmt> stmt) {
     evaluate(stmt->get_expr());
@@ -226,6 +241,24 @@ void Interpreter::visit_var_stmt(const std::shared_ptr<Var_stmt> stmt) {
 void Interpreter::visit_block_stmt(const std::shared_ptr<Block_stmt> stmt) {
     execute_block(stmt->get_statements(),
                   std::make_shared<Environment>(environment));
+}
+
+// Interpret an if statement.
+void Interpreter::visit_if_stmt(const std::shared_ptr<If_stmt> stmt) {
+    evaluate(stmt->get_condition());
+    if (is_truthy())
+        execute(stmt->get_then_branch());
+    else if (stmt->get_else_branch() != nullptr)
+        execute(stmt->get_else_branch());
+}
+
+// Interpret a while loop.
+void Interpreter::visit_while_stmt(const std::shared_ptr<While_stmt> stmt) {
+    evaluate(stmt->get_condition());
+    while (is_truthy()) {
+        execute(stmt->get_body());
+        evaluate(stmt->get_condition());
+    }
 }
 
 // Start the interpreter run.

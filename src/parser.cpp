@@ -110,11 +110,87 @@ std::shared_ptr<Stmt> Parser::var_declaration() {
 }
 
 std::shared_ptr<Stmt> Parser::statement() {
+    if (match(Token_type::FOR))
+        return for_statement();
+    if (match(Token_type::IF))
+        return if_statement();
     if (match(Token_type::PRINT))
         return print_statement();
+    if (match(Token_type::WHILE))
+        return while_statement();
     if (match(Token_type::LEFT_BRACE))
         return std::make_shared<Block_stmt>(block());
     return expression_statement();
+}
+
+std::shared_ptr<Stmt> Parser::if_statement() {
+    consume(Token_type::LEFT_PAREN, "Expect '(' after 'if'!");
+    std::shared_ptr<Expr> condition = expression();
+    consume(Token_type::RIGHT_PAREN, "Expect ')' after if condition!");
+
+    std::shared_ptr<Stmt> then_branch = statement();
+    std::shared_ptr<Stmt> else_branch = nullptr;
+    if (match(Token_type::ELSE))
+        else_branch = statement();
+
+    return std::make_shared<If_stmt>(condition, then_branch, else_branch);
+}
+
+std::shared_ptr<Stmt> Parser::while_statement() {
+    consume(Token_type::LEFT_PAREN, "Expect '(' after 'while'!");
+    std::shared_ptr<Expr> condition = expression();
+    consume(Token_type::RIGHT_PAREN, "Expect ')' after condition!");
+    std::shared_ptr<Stmt> body = statement();
+
+    return std::make_shared<While_stmt>(condition, body);
+}
+
+std::shared_ptr<Stmt> Parser::for_statement() {
+    consume(Token_type::LEFT_PAREN, "Expect '(' after 'for'!");
+
+    std::shared_ptr<Stmt> initializer;
+    if (match(Token_type::SEMICOLON))
+        initializer = nullptr;
+    else if (match(Token_type::VAR))
+        initializer = var_declaration();
+    else
+        initializer = expression_statement();
+
+    std::shared_ptr<Expr> condition = nullptr;
+    if (!check(Token_type::SEMICOLON))
+        condition = expression();
+    consume(Token_type::SEMICOLON, "Expect ';' after loop condition!");
+
+    std::shared_ptr<Expr> increment = nullptr;
+    if (!check(Token_type::RIGHT_PAREN))
+        increment = expression();
+    consume(Token_type::RIGHT_PAREN, "Expect ')' after 'for' clauses!");
+
+    std::shared_ptr<Stmt> body = statement();
+
+    if (increment != nullptr) {
+        std::list<std::shared_ptr<Stmt>> body_and_inc;
+        body_and_inc.push_back(body);
+        body_and_inc.push_back(std::make_shared<Expression_stmt>(increment));
+
+        body = std::make_shared<Block_stmt>(std::move(body_and_inc));
+    }
+
+    if (condition == nullptr)
+        condition = std::make_shared<Literal_expr>(
+                    std::make_shared<Token>(Token_type::TRUE, "true", 0));
+    body = std::make_shared<While_stmt>(condition, body);
+
+    if (initializer != nullptr) {
+        std::list<std::shared_ptr<Stmt>> init_and_body;
+        init_and_body.push_back(initializer);
+        init_and_body.push_back(body);
+
+        body = std::make_shared<Block_stmt>(std::move(init_and_body));
+    }
+
+
+    return body;
 }
 
 std::shared_ptr<Stmt> Parser::print_statement() {
@@ -144,7 +220,7 @@ std::shared_ptr<Expr> Parser::expression() {
 }
 
 std::shared_ptr<Expr> Parser::assignment() {
-    std::shared_ptr<Expr> expr = equality();
+    std::shared_ptr<Expr> expr = logical_or();
 
     if (match(Token_type::EQUAL)) {
         std::shared_ptr<Token> equals = previous();
@@ -154,6 +230,30 @@ std::shared_ptr<Expr> Parser::assignment() {
         if (assign != nullptr)
             return assign;
         error(equals, "Invalid assignment target!");
+    }
+
+    return expr;
+}
+
+std::shared_ptr<Expr> Parser::logical_or() {
+    std::shared_ptr<Expr> expr = logical_and();
+
+    while (match(Token_type::OR)) {
+        std::shared_ptr<Token> op = previous();
+        std::shared_ptr<Expr> right = logical_and();
+        expr = std::make_shared<Logical_expr>(expr, right, op);
+    }
+
+    return expr;
+}
+
+std::shared_ptr<Expr> Parser::logical_and() {
+    std::shared_ptr<Expr> expr = equality();
+
+    while (match(Token_type::AND)) {
+        std::shared_ptr<Token> op = previous();
+        std::shared_ptr<Expr> right = equality();
+        expr = std::make_shared<Logical_expr>(expr, right, op);
     }
 
     return expr;

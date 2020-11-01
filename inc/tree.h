@@ -8,6 +8,7 @@
 
 // Forward declarations.
 class Binary_expr;
+class Logical_expr;
 class Unary_expr;
 class Grouping_expr;
 class Literal_expr;
@@ -32,6 +33,7 @@ public:
     virtual void visit_literal_expr(const std::shared_ptr<Literal_expr> expr) = 0;
     virtual void visit_variable_expr(const std::shared_ptr<Variable_expr> expr) = 0;
     virtual void visit_assign_expr(const std::shared_ptr<Assign_expr> expr) = 0;
+    virtual void visit_logical_expr(const std::shared_ptr<Logical_expr> expr) = 0;
 };
 
 // Parent class for expression nodes.
@@ -77,6 +79,32 @@ public:
 
     void accept(const std::shared_ptr<Expr_visitor> visitor) override  {
         visitor->visit_binary_expr(shared_from_this());
+    }
+};
+
+// Expression node describing logical operations.
+class Logical_expr : public Expr,
+                     public std::enable_shared_from_this<Logical_expr> {
+    std::shared_ptr<Expr> left;
+    std::shared_ptr<Expr> right;
+    std::shared_ptr<Token> op;
+public:
+    Logical_expr(std::shared_ptr<Expr> left,
+           std::shared_ptr<Expr> right,
+           std::shared_ptr<Token> op)
+        : Expr(), left(left), right(right), op(op) {}
+    Logical_expr(const Logical_expr&) = default;
+    Logical_expr(Logical_expr&&) = default;
+    virtual ~Logical_expr() = default;
+    Logical_expr& operator=(Logical_expr&) = default;
+    Logical_expr& operator=(Logical_expr&&) = default;
+
+    std::shared_ptr<Expr> get_left() { return left; }
+    std::shared_ptr<Expr> get_right() { return right; }
+    std::shared_ptr<Token> get_op() { return op; }
+
+    void accept(const std::shared_ptr<Expr_visitor> visitor) override  {
+        visitor->visit_logical_expr(shared_from_this());
     }
 };
 
@@ -200,6 +228,8 @@ class Expression_stmt;
 class Print_stmt;
 class Var_stmt;
 class Block_stmt;
+class If_stmt;
+class While_stmt;
 
 // Visitor class for statement nodes.
 class Stmt_visitor {
@@ -215,6 +245,8 @@ public:
     virtual void visit_print_stmt(const std::shared_ptr<Print_stmt> stmt) = 0;
     virtual void visit_var_stmt(const std::shared_ptr<Var_stmt> stmt) = 0;
     virtual void visit_block_stmt(const std::shared_ptr<Block_stmt> stmt) = 0;
+    virtual void visit_if_stmt(const std::shared_ptr<If_stmt> stmt) = 0;
+    virtual void visit_while_stmt(const std::shared_ptr<While_stmt> stmt) = 0;
 };
 
 // Parent class for statement nodes
@@ -312,5 +344,53 @@ public:
     }
 };
 
+// Statement node describing an 'if' statement.
+class If_stmt : public Stmt,
+                public std::enable_shared_from_this<If_stmt> {
+    std::shared_ptr<Expr> condition;
+    std::shared_ptr<Stmt> then_branch;
+    std::shared_ptr<Stmt> else_branch;
+public:
+    If_stmt(std::shared_ptr<Expr> condition, std::shared_ptr<Stmt> then_branch,
+            std::shared_ptr<Stmt> else_branch)
+        : condition(condition), then_branch(then_branch),
+          else_branch(else_branch) {}
+    If_stmt(const If_stmt&) = default;
+    If_stmt(If_stmt&&) = default;
+    virtual ~If_stmt() = default;
+    If_stmt& operator=(If_stmt&) = default;
+    If_stmt& operator=(If_stmt&&) = default;
+
+    std::shared_ptr<Expr> get_condition() { return condition; }
+    std::shared_ptr<Stmt> get_then_branch() { return then_branch; }
+    std::shared_ptr<Stmt> get_else_branch() { return else_branch; }
+
+    void accept(const std::shared_ptr<Stmt_visitor> visitor) override  {
+        visitor->visit_if_stmt(shared_from_this());
+    }
+};
+
+// Statement node describing a while loop.
+class While_stmt : public Stmt,
+                   public std::enable_shared_from_this<While_stmt> {
+    std::shared_ptr<Expr> condition;
+    std::shared_ptr<Stmt> body;
+public:
+    While_stmt(std::shared_ptr<Expr> condition,
+            std::shared_ptr<Stmt> body)
+        : condition(condition), body(body) {}
+    While_stmt(const While_stmt&) = default;
+    While_stmt(While_stmt&&) = default;
+    virtual ~While_stmt() = default;
+    While_stmt& operator=(While_stmt&) = default;
+    While_stmt& operator=(While_stmt&&) = default;
+
+    std::shared_ptr<Expr> get_condition() { return condition; }
+    std::shared_ptr<Stmt> get_body() { return body; }
+
+    void accept(const std::shared_ptr<Stmt_visitor> visitor) override  {
+        visitor->visit_while_stmt(shared_from_this());
+    }
+};
 
 #endif // __TREE_H

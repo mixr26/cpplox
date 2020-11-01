@@ -43,12 +43,15 @@ public:
     void visit_binary_expr(const std::shared_ptr<Binary_expr> expr) override;
     void visit_variable_expr(const std::shared_ptr<Variable_expr> expr) override;
     void visit_assign_expr(const std::shared_ptr<Assign_expr> expr) override;
+    void visit_logical_expr(const std::shared_ptr<Logical_expr> expr) override;
 
     // Implementation of statement visitor interface.
     void visit_expression_stmt(const std::shared_ptr<Expression_stmt> stmt) override;
     void visit_print_stmt(const std::shared_ptr<Print_stmt> stmt) override;
     void visit_var_stmt(const std::shared_ptr<Var_stmt> stmt) override;
     void visit_block_stmt(const std::shared_ptr<Block_stmt> stmt) override;
+    void visit_if_stmt(const std::shared_ptr<If_stmt> stmt) override;
+    void visit_while_stmt(const std::shared_ptr<While_stmt> stmt) override;
 
     // Start the interpreter run.
     void interpret(std::list<std::shared_ptr<Stmt>>&& statements);
