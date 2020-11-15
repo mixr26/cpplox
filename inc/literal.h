@@ -5,11 +5,20 @@
 #include <cstddef>
 #include <string>
 #include <ostream>
+#include <memory>
+
+class Callable;
+class Function;
 
 // POD class which represents a literal.
 // Consists of a single variant of possible C++ types of the Lox literals.
 struct Literal {
-    std::variant<std::nullptr_t, std::string, double, bool> value;
+    std::variant<std::nullptr_t,
+                 std::string,
+                 double,
+                 bool,
+                 std::shared_ptr<Callable>,
+                 std::shared_ptr<Function>> value;
 
     friend std::ostream& operator<<(std::ostream& os, const Literal& lit);
 };

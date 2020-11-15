@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <list>
+#include <vector>
 
 #include "token.h"
 
@@ -14,6 +15,7 @@ class Grouping_expr;
 class Literal_expr;
 class Variable_expr;
 class Assign_expr;
+class Call_expr;
 
 // The following classes describe expression nodes of the AST.
 
@@ -34,6 +36,7 @@ public:
     virtual void visit_variable_expr(const std::shared_ptr<Variable_expr> expr) = 0;
     virtual void visit_assign_expr(const std::shared_ptr<Assign_expr> expr) = 0;
     virtual void visit_logical_expr(const std::shared_ptr<Logical_expr> expr) = 0;
+    virtual void visit_call_expr(const std::shared_ptr<Call_expr> expr) = 0;
 };
 
 // Parent class for expression nodes.
@@ -77,8 +80,34 @@ public:
     std::shared_ptr<Expr> get_right() { return right; }
     std::shared_ptr<Token> get_op() { return op; }
 
-    void accept(const std::shared_ptr<Expr_visitor> visitor) override  {
+    void accept(const std::shared_ptr<Expr_visitor> visitor) override {
         visitor->visit_binary_expr(shared_from_this());
+    }
+};
+
+// Expression node describing a function call.
+class Call_expr : public Expr,
+                  public std::enable_shared_from_this<Call_expr> {
+    std::shared_ptr<Expr> callee;
+    std::shared_ptr<Token> paren;
+    std::list<std::shared_ptr<Expr>> arguments;
+public:
+    Call_expr(std::shared_ptr<Expr> callee,
+              std::shared_ptr<Token> paren,
+              std::list<std::shared_ptr<Expr>>&& arguments)
+        : Expr(), callee(callee), paren(paren), arguments(arguments) {}
+    Call_expr(const Call_expr&) = default;
+    Call_expr(Call_expr&&) = default;
+    virtual ~Call_expr() = default;
+    Call_expr& operator=(Call_expr&) = default;
+    Call_expr& operator=(Call_expr&&) = default;
+
+    std::shared_ptr<Expr> get_callee() { return callee; }
+    std::shared_ptr<Token> get_paren() { return paren; }
+    std::list<std::shared_ptr<Expr>>& get_arguments() { return arguments; }
+
+    void accept(const std::shared_ptr<Expr_visitor> visitor) override  {
+        visitor->visit_call_expr(shared_from_this());
     }
 };
 
@@ -230,6 +259,8 @@ class Var_stmt;
 class Block_stmt;
 class If_stmt;
 class While_stmt;
+class Function_stmt;
+class Return_stmt;
 
 // Visitor class for statement nodes.
 class Stmt_visitor {
@@ -247,6 +278,8 @@ public:
     virtual void visit_block_stmt(const std::shared_ptr<Block_stmt> stmt) = 0;
     virtual void visit_if_stmt(const std::shared_ptr<If_stmt> stmt) = 0;
     virtual void visit_while_stmt(const std::shared_ptr<While_stmt> stmt) = 0;
+    virtual void visit_function_stmt(const std::shared_ptr<Function_stmt> stmt) = 0;
+    virtual void visit_return_stmt(const std::shared_ptr<Return_stmt> stmt) = 0;
 };
 
 // Parent class for statement nodes
@@ -261,6 +294,32 @@ public:
 
     // Pure virtual accept method of the visitor pattern.
     virtual void accept(const std::shared_ptr<Stmt_visitor> visitor) = 0;
+};
+
+// Expression node describing a function declaration.
+class Function_stmt : public Stmt,
+                      public std::enable_shared_from_this<Function_stmt> {
+    std::shared_ptr<Token> name;
+    std::vector<std::shared_ptr<Token>> params;
+    std::list<std::shared_ptr<Stmt>> body;
+public:
+    Function_stmt(std::shared_ptr<Token> name,
+           std::vector<std::shared_ptr<Token>>&& params,
+           std::list<std::shared_ptr<Stmt>>&& body)
+        : Stmt(), name(name), params(params), body(body) {}
+    Function_stmt(const Function_stmt&) = default;
+    Function_stmt(Function_stmt&&) = default;
+    virtual ~Function_stmt() = default;
+    Function_stmt& operator=(Function_stmt&) = default;
+    Function_stmt& operator=(Function_stmt&&) = default;
+
+    std::shared_ptr<Token> get_name() { return name; }
+    std::vector<std::shared_ptr<Token>>& get_params() { return params; }
+    std::list<std::shared_ptr<Stmt>>& get_body() { return body; }
+
+    void accept(const std::shared_ptr<Stmt_visitor> visitor) override {
+        visitor->visit_function_stmt(shared_from_this());
+    }
 };
 
 // Statement node describing expression statements.
@@ -390,6 +449,30 @@ public:
 
     void accept(const std::shared_ptr<Stmt_visitor> visitor) override  {
         visitor->visit_while_stmt(shared_from_this());
+    }
+};
+
+
+// Statement node describing the return statement.
+class Return_stmt : public Stmt,
+                    public std::enable_shared_from_this<Return_stmt> {
+    std::shared_ptr<Token> keyword;
+    std::shared_ptr<Expr> value;
+public:
+    Return_stmt(std::shared_ptr<Token> keyword,
+             std::shared_ptr<Expr> value)
+        : Stmt(), keyword(keyword), value(value) {}
+    Return_stmt(const Return_stmt&) = default;
+    Return_stmt(Return_stmt&&) = default;
+    virtual ~Return_stmt() = default;
+    Return_stmt& operator=(Return_stmt&) = default;
+    Return_stmt& operator=(Return_stmt&&) = default;
+
+    std::shared_ptr<Expr> get_value() { return value; }
+    std::shared_ptr<Token> get_keyword() { return keyword; }
+
+    void accept(const std::shared_ptr<Stmt_visitor> visitor) override  {
+        visitor->visit_return_stmt(shared_from_this());
     }
 };
 

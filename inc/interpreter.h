@@ -2,6 +2,7 @@
 #define __INTERPRETER_H
 
 #include <list>
+#include <vector>
 
 #include "tree.h"
 #include "literal.h"
@@ -11,10 +12,14 @@
 class Interpreter : public Expr_visitor,
                     public Stmt_visitor,
                     public std::enable_shared_from_this<Interpreter> {
+    friend class Function;
+
     // Result of the interpreter run. Also holds the intermediate results
     // during the interpreter run.
     Literal result;
-    std::shared_ptr<Environment> environment;
+
+    std::shared_ptr<Environment> globals = std::make_shared<Environment>();
+    std::shared_ptr<Environment> environment = globals;
 
     // Evaluate an expression. Just a wrapper around the call to accept method.
     void evaluate(std::shared_ptr<Expr> expr);
@@ -28,8 +33,10 @@ class Interpreter : public Expr_visitor,
     void add(auto& left);
     // Are two literals equal.
     bool is_equal(Literal& left);
+    // Get the Callable class (and its children) instance.
+    std::shared_ptr<Callable> get_callable(Literal &callee, std::shared_ptr<Token> parent);
 public:
-    Interpreter() : result(), environment(std::make_shared<Environment>()) {}
+    Interpreter();
     Interpreter(const Interpreter&) = delete;
     Interpreter(Interpreter&&) = delete;
     ~Interpreter() = default;
@@ -44,6 +51,7 @@ public:
     void visit_variable_expr(const std::shared_ptr<Variable_expr> expr) override;
     void visit_assign_expr(const std::shared_ptr<Assign_expr> expr) override;
     void visit_logical_expr(const std::shared_ptr<Logical_expr> expr) override;
+    void visit_call_expr(const std::shared_ptr<Call_expr> expr) override;
 
     // Implementation of statement visitor interface.
     void visit_expression_stmt(const std::shared_ptr<Expression_stmt> stmt) override;
@@ -52,6 +60,8 @@ public:
     void visit_block_stmt(const std::shared_ptr<Block_stmt> stmt) override;
     void visit_if_stmt(const std::shared_ptr<If_stmt> stmt) override;
     void visit_while_stmt(const std::shared_ptr<While_stmt> stmt) override;
+    void visit_function_stmt(const std::shared_ptr<Function_stmt> stmt) override;
+    void visit_return_stmt(const std::shared_ptr<Return_stmt> stmt) override;
 
     // Start the interpreter run.
     void interpret(std::list<std::shared_ptr<Stmt>>&& statements);

@@ -1,10 +1,35 @@
 #include <cassert>
 #include <type_traits>
 #include <iostream>
+#include <string>
+#include <chrono>
 
 #include "interpreter.h"
 #include "runtime_error.h"
 #include "error_handling.h"
+#include "function.h"
+#include "return.h"
+
+Interpreter::Interpreter() : result() {
+    class Clock_function : public Callable {
+        Literal call(std::shared_ptr<Interpreter> interpreter,
+                     std::vector<Literal> &arguments) override {
+            Literal ret;
+            ret.value = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(
+                                            std::chrono::system_clock::now().time_since_epoch()).count());
+
+            return ret;
+        }
+
+        uint32_t arity() override {
+            return 0;
+        }
+    };
+
+    Literal clock;
+    clock.value = std::make_shared<Clock_function>();
+    globals->define("clock", clock);
+}
 
 // Evaluate an expression. Just a wrapper around the call to accept method.
 void Interpreter::evaluate(std::shared_ptr<Expr> expr) {
@@ -20,12 +45,14 @@ void Interpreter::execute(std::shared_ptr<Stmt> stmt) {
 void Interpreter::execute_block(std::list<std::shared_ptr<Stmt>>& statements,
                                 std::shared_ptr<Environment> environment) {
     std::shared_ptr<Environment> previous = this->environment;
-
-    this->environment = environment;
-    for (auto statement : statements)
-        execute(statement);
-
-    this->environment = previous;
+    try {
+        this->environment = environment;
+        for (auto statement : statements)
+            execute(statement);
+    } catch (Return return_value) {
+        this->environment = previous;
+        throw return_value;
+    }
 }
 
 // Is the literal considered to be TRUE.
@@ -68,6 +95,23 @@ bool Interpreter::is_equal(Literal& left) {
     }, left.value, result.value);
 
     return ret;
+}
+
+// Get the Callable class (and its children) instance.
+std::shared_ptr<Callable> Interpreter::get_callable(Literal& callee,
+                                                    std::shared_ptr<Token> parent) {
+    return std::visit([&parent](auto& callee_value) {
+        using T = std::decay_t<decltype(callee_value)>;
+        if constexpr(std::is_same_v<T, std::shared_ptr<Callable>>)
+            return callee_value;
+        else if constexpr(std::is_same_v<T, std::shared_ptr<Function>>)
+            return std::dynamic_pointer_cast<Callable>(callee_value);
+        else {
+            throw Runtime_error("Can call only functions and classes!",
+                                parent);
+            return std::dynamic_pointer_cast<Callable>(std::make_shared<Function>());
+        }
+    }, callee.value);
 }
 
 // Implementation of visitor interface.
@@ -195,7 +239,6 @@ void Interpreter::visit_variable_expr(const std::shared_ptr<Variable_expr> expr)
 // Interpret a variable assignment.
 void Interpreter::visit_assign_expr(const std::shared_ptr<Assign_expr> expr) {
     evaluate(expr->get_value());
-
     environment->assign(expr->get_name(), result);
 }
 
@@ -212,6 +255,33 @@ void Interpreter::visit_logical_expr(const std::shared_ptr<Logical_expr> expr) {
     }
 
     evaluate(expr->get_right());
+}
+
+// Interpret a function call.
+void Interpreter::visit_call_expr(const std::shared_ptr<Call_expr> expr) {
+    evaluate(expr->get_callee());
+    std::shared_ptr<Callable> callee = get_callable(result, expr->get_paren());
+
+    std::vector<Literal> arguments;
+    for (std::shared_ptr<Expr> arg : expr->get_arguments()) {
+        evaluate(arg);
+        arguments.push_back(result);
+    }
+
+    if (arguments.size() != callee->arity())
+        throw Runtime_error("Expected " + std::to_string(callee->arity())
+                            + " arguments, but got "
+                            + std::to_string(arguments.size()) + "!",
+                            expr->get_paren());
+
+    result = callee->call(shared_from_this(), arguments);
+}
+
+// Interpret a function declaration.
+void Interpreter::visit_function_stmt(const std::shared_ptr<Function_stmt> stmt) {
+    Literal function;
+    function.value = std::make_shared<Function>(stmt);
+    environment->define(stmt->get_name()->get_lexeme(), function);
 }
 
 // Interpret an expression statement.
@@ -259,6 +329,19 @@ void Interpreter::visit_while_stmt(const std::shared_ptr<While_stmt> stmt) {
         execute(stmt->get_body());
         evaluate(stmt->get_condition());
     }
+}
+
+// Interpret a return statement.
+void Interpreter::visit_return_stmt(const std::shared_ptr<Return_stmt> stmt) {
+    Literal value;
+    value.value = nullptr;
+
+    if (stmt->get_value()) {
+        evaluate(stmt->get_value());
+        value = result;
+    }
+
+    throw Return(result);
 }
 
 // Start the interpreter run.
