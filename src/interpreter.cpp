@@ -9,6 +9,7 @@
 #include "error_handling.h"
 #include "function.h"
 #include "return.h"
+#include "lambda.h"
 
 Interpreter::Interpreter() : result() {
     class Clock_function : public Callable {
@@ -49,6 +50,7 @@ void Interpreter::execute_block(std::list<std::shared_ptr<Stmt>>& statements,
         this->environment = environment;
         for (auto statement : statements)
             execute(statement);
+        this->environment = previous;
     } catch (Return return_value) {
         this->environment = previous;
         throw return_value;
@@ -104,7 +106,8 @@ std::shared_ptr<Callable> Interpreter::get_callable(Literal& callee,
         using T = std::decay_t<decltype(callee_value)>;
         if constexpr(std::is_same_v<T, std::shared_ptr<Callable>>)
             return callee_value;
-        else if constexpr(std::is_same_v<T, std::shared_ptr<Function>>)
+        else if constexpr(std::is_same_v<T, std::shared_ptr<Function>>
+                          || std::is_same_v<T, std::shared_ptr<Lambda>>)
             return std::dynamic_pointer_cast<Callable>(callee_value);
         else {
             throw Runtime_error("Can call only functions and classes!",
@@ -277,10 +280,15 @@ void Interpreter::visit_call_expr(const std::shared_ptr<Call_expr> expr) {
     result = callee->call(shared_from_this(), arguments);
 }
 
+// Interpret a lambda function.
+void Interpreter::visit_lambda_expr(const std::shared_ptr<Lambda_expr> expr) {
+    result.value = std::make_shared<Lambda>(expr, environment);
+}
+
 // Interpret a function declaration.
 void Interpreter::visit_function_stmt(const std::shared_ptr<Function_stmt> stmt) {
     Literal function;
-    function.value = std::make_shared<Function>(stmt);
+    function.value = std::make_shared<Function>(stmt, environment);
     environment->define(stmt->get_name()->get_lexeme(), function);
 }
 

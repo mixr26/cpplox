@@ -1,11 +1,11 @@
-#include "function.h"
+#include "lambda.h"
 #include "environment.h"
 #include "interpreter.h"
 #include "return.h"
 
 // Invoke a call operator on the function
-Literal Function::call(std::shared_ptr<Interpreter> interpreter,
-                       std::vector<Literal>& arguments) {
+Literal Lambda::call(std::shared_ptr<Interpreter> interpreter,
+                     std::vector<Literal>& arguments) {
     std::shared_ptr<Environment> environment
             = std::make_shared<Environment>(closure);
     for (unsigned int i = 0; i < declaration->get_params().size(); i++) {
@@ -25,4 +25,4 @@ Literal Function::call(std::shared_ptr<Interpreter> interpreter,
 }
 
 // Check the arity of the function.
-uint32_t Function::arity() { return (declaration->get_params()).size(); }
+uint32_t Lambda::arity() { return (declaration->get_params()).size(); }

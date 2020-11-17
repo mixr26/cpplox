@@ -41,6 +41,7 @@ class Parser {
     std::shared_ptr<Expr> finish_call(std::shared_ptr<Expr> callee);
 
     std::shared_ptr<Function_stmt> function(std::string kind);
+    std::shared_ptr<Lambda_expr> lambda();
 
     // Discard the (possibly) erroneous tokens until we see one of the
     // synchronization tokens. Called after the parser reports an error.

@@ -124,6 +124,27 @@ std::shared_ptr<Function_stmt> Parser::function(std::string kind) {
                                            std::move(body));
 }
 
+std::shared_ptr<Lambda_expr> Parser::lambda() {
+    consume(Token_type::LEFT_PAREN, "Expect '(' after 'fun'!");
+
+    std::vector<std::shared_ptr<Token>> parameters;
+    if (!check(Token_type::RIGHT_PAREN)) {
+        do {
+            if (parameters.size() > 255)
+                error(peek(), "Can't have more than 255 parameters!");
+
+            parameters.push_back(consume(Token_type::IDENTIFIER,
+                                         "Expect parameter name!"));
+        } while (match(Token_type::COMMA));
+    }
+    consume(Token_type::RIGHT_PAREN, "Expect ')' after parameters!");
+
+    consume(Token_type::LEFT_BRACE, "Expect '{' before function body!");
+    std::list<std::shared_ptr<Stmt>> body = block();
+    return std::make_shared<Lambda_expr>(std::move(parameters),
+                                         std::move(body));
+}
+
 // Methods which represent the grammar nonterminals.
 
 std::shared_ptr<Stmt> Parser::declaration() {
@@ -400,6 +421,8 @@ std::shared_ptr<Expr> Parser::primary() {
         return std::make_shared<Literal_expr>(previous());
     else if (match(Token_type::IDENTIFIER))
         return std::make_shared<Variable_expr>(previous());
+    else if (match(Token_type::FUN))
+        return lambda();
     else if (match(Token_type::LEFT_PAREN)) {
         std::shared_ptr<Expr> expr = expression();
         consume(Token_type::RIGHT_PAREN, "Expect ')' after expression!");

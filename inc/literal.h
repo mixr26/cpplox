@@ -9,6 +9,7 @@
 
 class Callable;
 class Function;
+class Lambda;
 
 // POD class which represents a literal.
 // Consists of a single variant of possible C++ types of the Lox literals.
@@ -18,7 +19,8 @@ struct Literal {
                  double,
                  bool,
                  std::shared_ptr<Callable>,
-                 std::shared_ptr<Function>> value;
+                 std::shared_ptr<Function>,
+                 std::shared_ptr<Lambda>> value;
 
     friend std::ostream& operator<<(std::ostream& os, const Literal& lit);
 };

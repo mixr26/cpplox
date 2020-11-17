@@ -13,6 +13,7 @@ class Interpreter : public Expr_visitor,
                     public Stmt_visitor,
                     public std::enable_shared_from_this<Interpreter> {
     friend class Function;
+    friend class Lambda;
 
     // Result of the interpreter run. Also holds the intermediate results
     // during the interpreter run.
@@ -52,6 +53,7 @@ public:
     void visit_assign_expr(const std::shared_ptr<Assign_expr> expr) override;
     void visit_logical_expr(const std::shared_ptr<Logical_expr> expr) override;
     void visit_call_expr(const std::shared_ptr<Call_expr> expr) override;
+    void visit_lambda_expr(const std::shared_ptr<Lambda_expr> expr) override;
 
     // Implementation of statement visitor interface.
     void visit_expression_stmt(const std::shared_ptr<Expression_stmt> stmt) override;

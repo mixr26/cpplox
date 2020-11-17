@@ -16,6 +16,9 @@ class Literal_expr;
 class Variable_expr;
 class Assign_expr;
 class Call_expr;
+class Lambda_expr;
+
+class Stmt;
 
 // The following classes describe expression nodes of the AST.
 
@@ -37,6 +40,7 @@ public:
     virtual void visit_assign_expr(const std::shared_ptr<Assign_expr> expr) = 0;
     virtual void visit_logical_expr(const std::shared_ptr<Logical_expr> expr) = 0;
     virtual void visit_call_expr(const std::shared_ptr<Call_expr> expr) = 0;
+    virtual void visit_lambda_expr(const std::shared_ptr<Lambda_expr> expr) = 0;
 };
 
 // Parent class for expression nodes.
@@ -247,6 +251,29 @@ public:
 
     void accept(const std::shared_ptr<Expr_visitor> visitor) override  {
         visitor->visit_assign_expr(shared_from_this());
+    }
+};
+
+// Expression node describing a lambda expression.
+class Lambda_expr : public Expr,
+                    public std::enable_shared_from_this<Lambda_expr> {
+    std::vector<std::shared_ptr<Token>> params;
+    std::list<std::shared_ptr<Stmt>> body;
+public:
+    Lambda_expr(std::vector<std::shared_ptr<Token>>&& params,
+           std::list<std::shared_ptr<Stmt>>&& body)
+        : Expr(), params(params), body(body) {}
+    Lambda_expr(const Lambda_expr&) = default;
+    Lambda_expr(Lambda_expr&&) = default;
+    virtual ~Lambda_expr() = default;
+    Lambda_expr& operator=(Lambda_expr&) = default;
+    Lambda_expr& operator=(Lambda_expr&&) = default;
+
+    std::vector<std::shared_ptr<Token>>& get_params() { return params; }
+    std::list<std::shared_ptr<Stmt>>& get_body() { return body; }
+
+    void accept(const std::shared_ptr<Expr_visitor> visitor) override {
+        visitor->visit_lambda_expr(shared_from_this());
     }
 };
 
