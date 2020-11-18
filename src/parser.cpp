@@ -432,8 +432,8 @@ std::shared_ptr<Expr> Parser::primary() {
 }
 
 // Parse the token stream and return the root of the AST.
-std::list<std::shared_ptr<Stmt>>&& Parser::parse() {
+std::list<std::shared_ptr<Stmt>>& Parser::parse() {
     while (!is_at_end())
         statements.emplace_back(declaration());
-    return std::move(statements);
+    return statements;
 }

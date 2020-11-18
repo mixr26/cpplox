@@ -3,6 +3,7 @@
 
 #include <list>
 #include <vector>
+#include <unordered_map>
 
 #include "tree.h"
 #include "literal.h"
@@ -12,6 +13,8 @@
 class Interpreter : public Expr_visitor,
                     public Stmt_visitor,
                     public std::enable_shared_from_this<Interpreter> {
+    using side_table = std::unordered_map<std::shared_ptr<Expr>, int>;
+
     friend class Function;
     friend class Lambda;
 
@@ -21,6 +24,9 @@ class Interpreter : public Expr_visitor,
 
     std::shared_ptr<Environment> globals = std::make_shared<Environment>();
     std::shared_ptr<Environment> environment = globals;
+
+    // Resolved scopes of expressions.
+    side_table locals;
 
     // Evaluate an expression. Just a wrapper around the call to accept method.
     void evaluate(std::shared_ptr<Expr> expr);
@@ -36,6 +42,8 @@ class Interpreter : public Expr_visitor,
     bool is_equal(Literal& left);
     // Get the Callable class (and its children) instance.
     std::shared_ptr<Callable> get_callable(Literal &callee, std::shared_ptr<Token> parent);
+    // Look up a variable using the resolved depth.
+    Literal look_up_variable(std::shared_ptr<Token> name, std::shared_ptr<Expr> expr);
 public:
     Interpreter();
     Interpreter(const Interpreter&) = delete;
@@ -65,8 +73,11 @@ public:
     void visit_function_stmt(const std::shared_ptr<Function_stmt> stmt) override;
     void visit_return_stmt(const std::shared_ptr<Return_stmt> stmt) override;
 
+    // Resolve an expression.
+    void resolve(std::shared_ptr<Expr> expr, int depth) { locals[expr] = depth; }
+
     // Start the interpreter run.
-    void interpret(std::list<std::shared_ptr<Stmt>>&& statements);
+    void interpret(std::list<std::shared_ptr<Stmt>>& statements);
     // Get the result of the interpreter run.
     Literal get_result() { return result; }
 };

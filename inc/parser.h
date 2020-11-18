@@ -82,7 +82,7 @@ public:
     Parser& operator=(Parser&&) = delete;
 
     // Parse the token stream and return the root of the AST.
-    std::list<std::shared_ptr<Stmt>>&& parse();
+    std::list<std::shared_ptr<Stmt>>& parse();
 };
 
 #endif // __PARSER_H

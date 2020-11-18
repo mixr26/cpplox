@@ -11,7 +11,7 @@
 #include "return.h"
 #include "lambda.h"
 
-Interpreter::Interpreter() : result() {
+Interpreter::Interpreter() : result(), locals() {
     class Clock_function : public Callable {
         Literal call(std::shared_ptr<Interpreter> interpreter,
                      std::vector<Literal> &arguments) override {
@@ -115,6 +115,16 @@ std::shared_ptr<Callable> Interpreter::get_callable(Literal& callee,
             return std::dynamic_pointer_cast<Callable>(std::make_shared<Function>());
         }
     }, callee.value);
+}
+
+Literal Interpreter::look_up_variable(std::shared_ptr<Token> name,
+                                      std::shared_ptr<Expr> expr) {
+    if (locals.find(expr) != locals.end()) {
+        int distance = locals[expr];
+        return environment->get_at(distance, name->get_lexeme());
+    }
+
+    return globals->get(name);
 }
 
 // Implementation of visitor interface.
@@ -242,7 +252,12 @@ void Interpreter::visit_variable_expr(const std::shared_ptr<Variable_expr> expr)
 // Interpret a variable assignment.
 void Interpreter::visit_assign_expr(const std::shared_ptr<Assign_expr> expr) {
     evaluate(expr->get_value());
-    environment->assign(expr->get_name(), result);
+
+    if (locals.find(expr) != locals.end()) {
+        environment->assign_at(locals[expr], expr->get_name(), result);
+    } else {
+        globals->assign(expr->get_name(), result);
+    }
 }
 
 // Interpret a logical expression.
@@ -353,7 +368,7 @@ void Interpreter::visit_return_stmt(const std::shared_ptr<Return_stmt> stmt) {
 }
 
 // Start the interpreter run.
-void Interpreter::interpret(std::list<std::shared_ptr<Stmt>>&& statements) {
+void Interpreter::interpret(std::list<std::shared_ptr<Stmt>>& statements) {
     try {
         for (auto stmt : statements)
             execute(stmt);
