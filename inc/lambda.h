@@ -8,6 +8,7 @@
 class Lambda_expr;
 class Environment;
 
+// Represents an anonymous function.
 class Lambda : public Callable {
     std::shared_ptr<Lambda_expr> declaration = nullptr;
     std::shared_ptr<Environment> closure;

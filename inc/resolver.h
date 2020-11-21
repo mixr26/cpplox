@@ -19,9 +19,18 @@ class Resolver : public Expr_visitor,
     // Describes whether we are resolving something inside a function declaration.
     enum class Function_type {
         NONE,
-        FUNCTION
+        FUNCTION,
+        INITIALIZER,
+        METHOD
     };
     Function_type current_function = Function_type::NONE;
+
+    // Describes whether we are resolving something inside a class declaration.
+    enum class Class_type {
+        NONE,
+        CLASS
+    };
+    Class_type current_class = Class_type::NONE;
 
     // Stack of scopes.
     std::vector<scope> scopes;
@@ -52,8 +61,9 @@ public:
     void visit_expression_stmt(std::shared_ptr<Expression_stmt> stmt) override;
     void visit_if_stmt(std::shared_ptr<If_stmt> stmt) override;
     void visit_print_stmt(std::shared_ptr<Print_stmt> stmt) override;
-    void visit_return_stmt(const std::shared_ptr<Return_stmt> stmt) override;
+    void visit_return_stmt(std::shared_ptr<Return_stmt> stmt) override;
     void visit_while_stmt(std::shared_ptr<While_stmt> stmt) override;
+    void visit_class_stmt(std::shared_ptr<Class_stmt> stmt) override;
 
     void visit_variable_expr(std::shared_ptr<Variable_expr> expr) override;
     void visit_assign_expr(std::shared_ptr<Assign_expr> expr) override;
@@ -64,6 +74,9 @@ public:
     void visit_logical_expr(std::shared_ptr<Logical_expr> expr) override;
     void visit_unary_expr(std::shared_ptr<Unary_expr> expr) override;
     void visit_lambda_expr(std::shared_ptr<Lambda_expr> expr) override;
+    void visit_get_expr(std::shared_ptr<Get_expr> expr) override;
+    void visit_set_expr(std::shared_ptr<Set_expr> expr) override;
+    void visit_this_expr(std::shared_ptr<This_expr> expr) override;
 
     // Resolve a list of statements.
     void resolve(std::list<std::shared_ptr<Stmt>>& statements);

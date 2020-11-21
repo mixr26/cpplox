@@ -17,6 +17,9 @@ class Variable_expr;
 class Assign_expr;
 class Call_expr;
 class Lambda_expr;
+class Get_expr;
+class Set_expr;
+class This_expr;
 
 class Stmt;
 
@@ -41,6 +44,9 @@ public:
     virtual void visit_logical_expr(const std::shared_ptr<Logical_expr> expr) = 0;
     virtual void visit_call_expr(const std::shared_ptr<Call_expr> expr) = 0;
     virtual void visit_lambda_expr(const std::shared_ptr<Lambda_expr> expr) = 0;
+    virtual void visit_get_expr(const std::shared_ptr<Get_expr> expr) = 0;
+    virtual void visit_set_expr(const std::shared_ptr<Set_expr> expr) = 0;
+    virtual void visit_this_expr(const std::shared_ptr<This_expr> expr) = 0;
 };
 
 // Parent class for expression nodes.
@@ -112,6 +118,84 @@ public:
 
     void accept(const std::shared_ptr<Expr_visitor> visitor) override  {
         visitor->visit_call_expr(shared_from_this());
+    }
+};
+
+// Expression node describing a class getter.
+class Get_expr : public Expr,
+                 public std::enable_shared_from_this<Get_expr> {
+    std::shared_ptr<Expr> object;
+    std::shared_ptr<Token> name;
+public:
+    Get_expr(std::shared_ptr<Expr> object,
+              std::shared_ptr<Token> name)
+        : Expr(), object(object), name(name) {}
+    Get_expr(const Get_expr&) = default;
+    Get_expr(Get_expr&&) = default;
+    virtual ~Get_expr() = default;
+    Get_expr& operator=(Get_expr&) = default;
+    Get_expr& operator=(Get_expr&&) = default;
+
+    std::shared_ptr<Expr> get_object() { return object; }
+    std::shared_ptr<Token> get_name() { return name; }
+
+    std::shared_ptr<Expr> make_assignment_expr(std::shared_ptr<Expr> left,
+                                               std::shared_ptr<Expr> right) {
+        std::shared_ptr<Set_expr> set =
+                std::make_shared<Set_expr>(std::dynamic_pointer_cast<Get_expr>(left)->get_object(),
+                                           std::dynamic_pointer_cast<Get_expr>(left)->get_name(),
+                                           right);
+        return std::static_pointer_cast<Expr>(set);
+    }
+
+    void accept(const std::shared_ptr<Expr_visitor> visitor) override  {
+        visitor->visit_get_expr(shared_from_this());
+    }
+};
+
+// Expression node describing a class setter.
+class Set_expr : public Expr,
+                 public std::enable_shared_from_this<Set_expr> {
+    std::shared_ptr<Expr> object;
+    std::shared_ptr<Token> name;
+    std::shared_ptr<Expr> value;
+public:
+    Set_expr(std::shared_ptr<Expr> object,
+             std::shared_ptr<Token> name,
+             std::shared_ptr<Expr> value)
+        : Expr(), object(object), name(name), value(value) {}
+    Set_expr(const Set_expr&) = default;
+    Set_expr(Set_expr&&) = default;
+    virtual ~Set_expr() = default;
+    Set_expr& operator=(Set_expr&) = default;
+    Set_expr& operator=(Set_expr&&) = default;
+
+    std::shared_ptr<Expr> get_object() { return object; }
+    std::shared_ptr<Token> get_name() { return name; }
+    std::shared_ptr<Expr> get_value() { return value; }
+
+    void accept(const std::shared_ptr<Expr_visitor> visitor) override  {
+        visitor->visit_set_expr(shared_from_this());
+    }
+};
+
+// Expression node describing a class THIS expression.
+class This_expr : public Expr,
+                  public std::enable_shared_from_this<This_expr> {
+    std::shared_ptr<Token> keyword;
+public:
+    This_expr(std::shared_ptr<Token> keyword)
+        : Expr(), keyword(keyword) {}
+    This_expr(const This_expr&) = default;
+    This_expr(This_expr&&) = default;
+    virtual ~This_expr() = default;
+    This_expr& operator=(This_expr&) = default;
+    This_expr& operator=(This_expr&&) = default;
+
+    std::shared_ptr<Token> get_keyword() { return keyword; }
+
+    void accept(const std::shared_ptr<Expr_visitor> visitor) override  {
+        visitor->visit_this_expr(shared_from_this());
     }
 };
 
@@ -288,6 +372,7 @@ class If_stmt;
 class While_stmt;
 class Function_stmt;
 class Return_stmt;
+class Class_stmt;
 
 // Visitor class for statement nodes.
 class Stmt_visitor {
@@ -307,6 +392,7 @@ public:
     virtual void visit_while_stmt(const std::shared_ptr<While_stmt> stmt) = 0;
     virtual void visit_function_stmt(const std::shared_ptr<Function_stmt> stmt) = 0;
     virtual void visit_return_stmt(const std::shared_ptr<Return_stmt> stmt) = 0;
+    virtual void visit_class_stmt(const std::shared_ptr<Class_stmt> stmt) = 0;
 };
 
 // Parent class for statement nodes
@@ -500,6 +586,29 @@ public:
 
     void accept(const std::shared_ptr<Stmt_visitor> visitor) override  {
         visitor->visit_return_stmt(shared_from_this());
+    }
+};
+
+// Statement node describing a class declaration.
+class Class_stmt : public Stmt,
+                   public std::enable_shared_from_this<Class_stmt> {
+    std::shared_ptr<Token> name;
+    std::list<std::shared_ptr<Function_stmt>> methods;
+public:
+    Class_stmt(std::shared_ptr<Token> name,
+               std::list<std::shared_ptr<Function_stmt>>&& methods)
+        : Stmt(), name(name), methods(methods) {}
+    Class_stmt(const Class_stmt&) = default;
+    Class_stmt(Class_stmt&&) = default;
+    virtual ~Class_stmt() = default;
+    Class_stmt& operator=(Class_stmt&) = default;
+    Class_stmt& operator=(Class_stmt&&) = default;
+
+    std::shared_ptr<Token> get_name() { return name; }
+    std::list<std::shared_ptr<Function_stmt>>& get_methods() { return methods; }
+
+    void accept(const std::shared_ptr<Stmt_visitor> visitor) override  {
+        visitor->visit_class_stmt(shared_from_this());
     }
 };
 

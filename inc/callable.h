@@ -8,6 +8,7 @@
 
 class Interpreter;
 
+// Represents a callable object.
 class Callable {
 public:
     // Invoke a call operator on the Callable instance (class or function).

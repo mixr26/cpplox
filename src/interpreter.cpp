@@ -4,6 +4,8 @@
 #include <string>
 #include <chrono>
 
+#include "class.h"
+#include "instance.h"
 #include "interpreter.h"
 #include "runtime_error.h"
 #include "error_handling.h"
@@ -107,12 +109,27 @@ std::shared_ptr<Callable> Interpreter::get_callable(Literal& callee,
         if constexpr(std::is_same_v<T, std::shared_ptr<Callable>>)
             return callee_value;
         else if constexpr(std::is_same_v<T, std::shared_ptr<Function>>
-                          || std::is_same_v<T, std::shared_ptr<Lambda>>)
+                          || std::is_same_v<T, std::shared_ptr<Lambda>>
+                          || std::is_same_v<T, std::shared_ptr<Class>>)
             return std::dynamic_pointer_cast<Callable>(callee_value);
         else {
             throw Runtime_error("Can call only functions and classes!",
                                 parent);
             return std::dynamic_pointer_cast<Callable>(std::make_shared<Function>());
+        }
+    }, callee.value);
+}
+
+// Get the Instance class.
+std::shared_ptr<Instance> Interpreter::get_instance(Literal& callee,
+                                                    std::shared_ptr<Token> parent) {
+    return std::visit([&parent](auto& callee_value) {
+        using T = std::decay_t<decltype(callee_value)>;
+        if constexpr(std::is_same_v<T, std::shared_ptr<Instance>>)
+            return callee_value;
+        else {
+            throw Runtime_error("Only instances have fields!", parent);
+            return std::make_shared<Instance>();
         }
     }, callee.value);
 }
@@ -300,10 +317,38 @@ void Interpreter::visit_lambda_expr(const std::shared_ptr<Lambda_expr> expr) {
     result.value = std::make_shared<Lambda>(expr, environment);
 }
 
+// Interpret a class object get expression.
+void Interpreter::visit_get_expr(const std::shared_ptr<Get_expr> expr) {
+    evaluate(expr->get_object());
+
+    try {
+        std::shared_ptr<Instance> object
+                = std::get<std::shared_ptr<Instance>>(result.value);
+        result = object->get(expr->get_name());
+    } catch (std::bad_variant_access) {
+        throw Runtime_error("Only instances have properties!",
+                            expr->get_name());
+    }
+}
+
+// Interpret a class object set expression.
+void Interpreter::visit_set_expr(const std::shared_ptr<Set_expr> expr) {
+    evaluate(expr->get_object());
+    std::shared_ptr<Instance> object = get_instance(result, expr->get_name());
+
+    evaluate(expr->get_value());
+    object->set(expr->get_name(), result);
+}
+
+// Interpret a this expression
+void Interpreter::visit_this_expr(const std::shared_ptr<This_expr> expr) {
+    result = look_up_variable(expr->get_keyword(), expr);
+}
+
 // Interpret a function declaration.
 void Interpreter::visit_function_stmt(const std::shared_ptr<Function_stmt> stmt) {
     Literal function;
-    function.value = std::make_shared<Function>(stmt, environment);
+    function.value = std::make_shared<Function>(stmt, environment, false);
     environment->define(stmt->get_name()->get_lexeme(), function);
 }
 
@@ -365,6 +410,26 @@ void Interpreter::visit_return_stmt(const std::shared_ptr<Return_stmt> stmt) {
     }
 
     throw Return(result);
+}
+
+// Interpret a class declaration.
+void Interpreter::visit_class_stmt(const std::shared_ptr<Class_stmt> stmt) {
+    Literal temp;
+    temp.value = nullptr;
+    environment->define(stmt->get_name()->get_lexeme(), temp);
+
+    Class::method_map methods;
+    for (auto method : stmt->get_methods()) {
+        std::shared_ptr<Function> function
+                = std::make_shared<Function>(method, environment,
+                                             method->get_name()->get_lexeme() == "init");
+        methods[method->get_name()->get_lexeme()] = function;
+    }
+
+    std::shared_ptr<Class> klass
+            = std::make_shared<Class>(stmt->get_name()->get_lexeme(), methods);
+    temp.value = klass;
+    environment->assign(stmt->get_name(), temp);
 }
 
 // Start the interpreter run.

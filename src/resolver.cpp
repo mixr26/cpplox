@@ -115,18 +115,45 @@ void Resolver::visit_print_stmt(std::shared_ptr<Print_stmt> stmt) {
     resolve(stmt->get_expr());
 }
 
-void Resolver::visit_return_stmt(const std::shared_ptr<Return_stmt> stmt) {
+void Resolver::visit_return_stmt(std::shared_ptr<Return_stmt> stmt) {
     if (current_function == Function_type::NONE)
         error_handling::error(stmt->get_keyword(),
                               "Can't return from top-level code!");
 
-    if (stmt->get_value() != nullptr)
+    if (stmt->get_value() != nullptr) {
+        if (current_function == Function_type::INITIALIZER)
+            error_handling::error(stmt->get_keyword(),
+                                  "Can't return a value from an initializer!");
         resolve(stmt->get_value());
+    }
 }
 
 void Resolver::visit_while_stmt(std::shared_ptr<While_stmt> stmt) {
     resolve(stmt->get_condition());
     resolve(stmt->get_body());
+}
+
+void Resolver::visit_class_stmt(std::shared_ptr<Class_stmt> stmt) {
+    Class_type enclosing_class = current_class;
+    current_class = Class_type::CLASS;
+
+    declare(stmt->get_name());
+    define(stmt->get_name());
+
+    begin_scope();
+    auto& top_scope = scopes.back();
+    top_scope["this"] = true;
+
+    for (auto method : stmt->get_methods()) {
+        Function_type declaration = Function_type::METHOD;
+        if (method->get_name()->get_lexeme() == "init")
+            declaration = Function_type::INITIALIZER;
+        resolve_function(method, declaration);
+    }
+
+    end_scope();
+
+    current_class = enclosing_class;
 }
 
 void Resolver::visit_variable_expr(std::shared_ptr<Variable_expr> expr) {
@@ -175,4 +202,21 @@ void Resolver::visit_unary_expr(std::shared_ptr<Unary_expr> expr) {
 
 void Resolver::visit_lambda_expr(std::shared_ptr<Lambda_expr> expr) {
     resolve_lambda(expr);
+}
+
+void Resolver::visit_get_expr(std::shared_ptr<Get_expr> expr) {
+    resolve(expr->get_object());
+}
+
+void Resolver::visit_set_expr(std::shared_ptr<Set_expr> expr) {
+    resolve(expr->get_value());
+    resolve(expr->get_object());
+}
+
+void Resolver::visit_this_expr(std::shared_ptr<This_expr> expr) {
+    if (current_class == Class_type::NONE)
+        error_handling::error(expr->get_keyword(),
+                              "Can't use 'this' outside of a class!");
+
+    resolve_local(expr, expr->get_keyword());
 }

@@ -149,6 +149,8 @@ std::shared_ptr<Lambda_expr> Parser::lambda() {
 
 std::shared_ptr<Stmt> Parser::declaration() {
     try {
+        if (match(Token_type::CLASS))
+            return class_declaration();
         if (match(Token_type::FUN))
             return function("function");
         if (match(Token_type::VAR))
@@ -158,6 +160,20 @@ std::shared_ptr<Stmt> Parser::declaration() {
         synchronize();
         return nullptr;
     }
+}
+
+std::shared_ptr<Stmt> Parser::class_declaration() {
+    std::shared_ptr<Token> name = consume(Token_type::IDENTIFIER,
+                                          "Expect class name!");
+    consume(Token_type::LEFT_BRACE, "Expect '{' before class body!");
+
+    std::list<std::shared_ptr<Function_stmt>> methods;
+    while (!check(Token_type::RIGHT_BRACE) && !is_at_end())
+        methods.emplace_back(function("method"));
+
+    consume(Token_type::RIGHT_BRACE, "Expect '}' after class body!");
+
+    return std::make_shared<Class_stmt>(name, std::move(methods));
 }
 
 std::shared_ptr<Stmt> Parser::var_declaration() {
@@ -405,6 +421,11 @@ std::shared_ptr<Expr> Parser::call() {
     while (true) {
         if (match(Token_type::LEFT_PAREN))
             expr = finish_call(expr);
+        else if (match(Token_type::DOT)) {
+            std::shared_ptr<Token> name = consume(Token_type::IDENTIFIER,
+                                                  "Expect property name after '.'");
+            expr = std::make_shared<Get_expr>(expr, name);
+        }
         else
             break;
     }
@@ -419,6 +440,8 @@ std::shared_ptr<Expr> Parser::primary() {
         || match(Token_type::STRING)
         || match(Token_type::NUMBER))
         return std::make_shared<Literal_expr>(previous());
+    else if (match(Token_type::THIS))
+        return std::make_shared<This_expr>(previous());
     else if (match(Token_type::IDENTIFIER))
         return std::make_shared<Variable_expr>(previous());
     else if (match(Token_type::FUN))

@@ -42,6 +42,8 @@ class Interpreter : public Expr_visitor,
     bool is_equal(Literal& left);
     // Get the Callable class (and its children) instance.
     std::shared_ptr<Callable> get_callable(Literal &callee, std::shared_ptr<Token> parent);
+    // Get the Instance class instance.
+    std::shared_ptr<Instance> get_instance(Literal& callee, std::shared_ptr<Token> parent);
     // Look up a variable using the resolved depth.
     Literal look_up_variable(std::shared_ptr<Token> name, std::shared_ptr<Expr> expr);
 public:
@@ -62,6 +64,9 @@ public:
     void visit_logical_expr(const std::shared_ptr<Logical_expr> expr) override;
     void visit_call_expr(const std::shared_ptr<Call_expr> expr) override;
     void visit_lambda_expr(const std::shared_ptr<Lambda_expr> expr) override;
+    void visit_get_expr(const std::shared_ptr<Get_expr> expr) override;
+    void visit_set_expr(const std::shared_ptr<Set_expr> expr) override;
+    void visit_this_expr(const std::shared_ptr<This_expr> expr) override;
 
     // Implementation of statement visitor interface.
     void visit_expression_stmt(const std::shared_ptr<Expression_stmt> stmt) override;
@@ -72,6 +77,7 @@ public:
     void visit_while_stmt(const std::shared_ptr<While_stmt> stmt) override;
     void visit_function_stmt(const std::shared_ptr<Function_stmt> stmt) override;
     void visit_return_stmt(const std::shared_ptr<Return_stmt> stmt) override;
+    void visit_class_stmt(const std::shared_ptr<Class_stmt> stmt) override;
 
     // Resolve an expression.
     void resolve(std::shared_ptr<Expr> expr, int depth) { locals[expr] = depth; }
