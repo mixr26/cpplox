@@ -25,5 +25,9 @@ uint32_t Class::arity() {
 std::shared_ptr<Function> Class::find_method(std::string name) {
     if (methods.find(name) != methods.end())
         return methods[name];
+
+    if (superclass != nullptr)
+        return superclass->find_method(name);
+
     return nullptr;
 }

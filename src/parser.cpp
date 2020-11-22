@@ -165,6 +165,13 @@ std::shared_ptr<Stmt> Parser::declaration() {
 std::shared_ptr<Stmt> Parser::class_declaration() {
     std::shared_ptr<Token> name = consume(Token_type::IDENTIFIER,
                                           "Expect class name!");
+
+    std::shared_ptr<Variable_expr> superclass = nullptr;
+    if (match(Token_type::LESS)) {
+        consume(Token_type::IDENTIFIER, "Expect superclass name!");
+        superclass = std::make_shared<Variable_expr>(previous());
+    }
+
     consume(Token_type::LEFT_BRACE, "Expect '{' before class body!");
 
     std::list<std::shared_ptr<Function_stmt>> methods;
@@ -173,7 +180,7 @@ std::shared_ptr<Stmt> Parser::class_declaration() {
 
     consume(Token_type::RIGHT_BRACE, "Expect '}' after class body!");
 
-    return std::make_shared<Class_stmt>(name, std::move(methods));
+    return std::make_shared<Class_stmt>(name, superclass, std::move(methods));
 }
 
 std::shared_ptr<Stmt> Parser::var_declaration() {
@@ -440,6 +447,13 @@ std::shared_ptr<Expr> Parser::primary() {
         || match(Token_type::STRING)
         || match(Token_type::NUMBER))
         return std::make_shared<Literal_expr>(previous());
+    else if (match(Token_type::SUPER)) {
+        std::shared_ptr<Token> keyword = previous();
+        consume(Token_type::DOT, "Expect '.' after 'super'!");
+        std::shared_ptr<Token> method = consume(Token_type::IDENTIFIER,
+                                                "Expect superclass method name!");
+        return std::make_shared<Super_expr>(keyword, method);
+    }
     else if (match(Token_type::THIS))
         return std::make_shared<This_expr>(previous());
     else if (match(Token_type::IDENTIFIER))

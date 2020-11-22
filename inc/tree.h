@@ -19,6 +19,7 @@ class Call_expr;
 class Lambda_expr;
 class Get_expr;
 class Set_expr;
+class Super_expr;
 class This_expr;
 
 class Stmt;
@@ -47,6 +48,7 @@ public:
     virtual void visit_get_expr(const std::shared_ptr<Get_expr> expr) = 0;
     virtual void visit_set_expr(const std::shared_ptr<Set_expr> expr) = 0;
     virtual void visit_this_expr(const std::shared_ptr<This_expr> expr) = 0;
+    virtual void visit_super_expr(const std::shared_ptr<Super_expr> expr) = 0;
 };
 
 // Parent class for expression nodes.
@@ -196,6 +198,28 @@ public:
 
     void accept(const std::shared_ptr<Expr_visitor> visitor) override  {
         visitor->visit_this_expr(shared_from_this());
+    }
+};
+
+// Expression node describing a class SUPER expression.
+class Super_expr : public Expr,
+                   public std::enable_shared_from_this<Super_expr> {
+    std::shared_ptr<Token> keyword;
+    std::shared_ptr<Token> method;
+public:
+    Super_expr(std::shared_ptr<Token> keyword, std::shared_ptr<Token> method)
+        : Expr(), keyword(keyword), method(method) {}
+    Super_expr(const Super_expr&) = default;
+    Super_expr(Super_expr&&) = default;
+    virtual ~Super_expr() = default;
+    Super_expr& operator=(Super_expr&) = default;
+    Super_expr& operator=(Super_expr&&) = default;
+
+    std::shared_ptr<Token> get_keyword() { return keyword; }
+    std::shared_ptr<Token> get_method() { return method; }
+
+    void accept(const std::shared_ptr<Expr_visitor> visitor) override  {
+        visitor->visit_super_expr(shared_from_this());
     }
 };
 
@@ -593,11 +617,13 @@ public:
 class Class_stmt : public Stmt,
                    public std::enable_shared_from_this<Class_stmt> {
     std::shared_ptr<Token> name;
+    std::shared_ptr<Variable_expr> superclass;
     std::list<std::shared_ptr<Function_stmt>> methods;
 public:
     Class_stmt(std::shared_ptr<Token> name,
+               std::shared_ptr<Variable_expr> superclass,
                std::list<std::shared_ptr<Function_stmt>>&& methods)
-        : Stmt(), name(name), methods(methods) {}
+        : Stmt(), name(name), superclass(superclass), methods(methods) {}
     Class_stmt(const Class_stmt&) = default;
     Class_stmt(Class_stmt&&) = default;
     virtual ~Class_stmt() = default;
@@ -605,6 +631,7 @@ public:
     Class_stmt& operator=(Class_stmt&&) = default;
 
     std::shared_ptr<Token> get_name() { return name; }
+    std::shared_ptr<Variable_expr> get_superclass() { return superclass; }
     std::list<std::shared_ptr<Function_stmt>>& get_methods() { return methods; }
 
     void accept(const std::shared_ptr<Stmt_visitor> visitor) override  {

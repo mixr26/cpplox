@@ -134,6 +134,19 @@ std::shared_ptr<Instance> Interpreter::get_instance(Literal& callee,
     }, callee.value);
 }
 
+std::shared_ptr<Class> Interpreter::get_superclass(Literal& callee,
+                                                   std::shared_ptr<Token> parent) {
+    return std::visit([&parent](auto& callee_value) {
+        using T = std::decay_t<decltype(callee_value)>;
+        if constexpr(std::is_same_v<T, std::shared_ptr<Class>>)
+            return callee_value;
+        else {
+            throw Runtime_error("Superclass must be a class!", parent);
+            return std::make_shared<Class>();
+        }
+    }, callee.value);
+}
+
 Literal Interpreter::look_up_variable(std::shared_ptr<Token> name,
                                       std::shared_ptr<Expr> expr) {
     if (locals.find(expr) != locals.end()) {
@@ -340,9 +353,29 @@ void Interpreter::visit_set_expr(const std::shared_ptr<Set_expr> expr) {
     object->set(expr->get_name(), result);
 }
 
-// Interpret a this expression
+// Interpret a this expression.
 void Interpreter::visit_this_expr(const std::shared_ptr<This_expr> expr) {
     result = look_up_variable(expr->get_keyword(), expr);
+}
+
+// Interpret a super expression.
+void Interpreter::visit_super_expr(const std::shared_ptr<Super_expr> expr) {
+    int distance = locals[expr];
+    std::shared_ptr<Class> superclass
+            = std::get<std::shared_ptr<Class>>(environment->get_at(distance, "super").value);
+
+    std::shared_ptr<Instance> object
+            = std::get<std::shared_ptr<Instance>>(environment->get_at(distance - 1, "this").value);
+
+    std::shared_ptr<Function> method
+            = superclass->find_method(expr->get_method()->get_lexeme());
+
+    if (!method)
+        throw Runtime_error("Undefined property '"
+                            + expr->get_method()->get_lexeme() + "'!",
+                            expr->get_method());
+
+    result.value = method->bind(object);
 }
 
 // Interpret a function declaration.
@@ -416,7 +449,21 @@ void Interpreter::visit_return_stmt(const std::shared_ptr<Return_stmt> stmt) {
 void Interpreter::visit_class_stmt(const std::shared_ptr<Class_stmt> stmt) {
     Literal temp;
     temp.value = nullptr;
+
+    Literal superclass;
+    superclass.value = nullptr;
+    if (stmt->get_superclass()) {
+        evaluate(stmt->get_superclass());
+        superclass.value
+                = get_superclass(result, stmt->get_superclass()->get_name());
+    }
+
     environment->define(stmt->get_name()->get_lexeme(), temp);
+
+    if (stmt->get_superclass()) {
+        environment = std::make_shared<Environment>(environment);
+        environment->define("super", superclass);
+    }
 
     Class::method_map methods;
     for (auto method : stmt->get_methods()) {
@@ -426,8 +473,18 @@ void Interpreter::visit_class_stmt(const std::shared_ptr<Class_stmt> stmt) {
         methods[method->get_name()->get_lexeme()] = function;
     }
 
-    std::shared_ptr<Class> klass
-            = std::make_shared<Class>(stmt->get_name()->get_lexeme(), methods);
+    std::shared_ptr<Class> klass = nullptr;
+    if (stmt->get_superclass())
+        klass = std::make_shared<Class>(stmt->get_name()->get_lexeme(),
+                                        std::get<std::shared_ptr<Class>>(superclass.value),
+                                        methods);
+    else
+        klass = std::make_shared<Class>(stmt->get_name()->get_lexeme(),
+                                        nullptr, methods);
+
+    if (stmt->get_superclass())
+        environment = environment->get_enclosing();
+
     temp.value = klass;
     environment->assign(stmt->get_name(), temp);
 }

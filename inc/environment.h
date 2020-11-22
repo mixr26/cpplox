@@ -38,6 +38,8 @@ public:
     // Set the value of an existing variable, at the desired depth in the
     // environment stack.
     void assign_at(int distance, std::shared_ptr<Token> name, Literal value);
+
+    std::shared_ptr<Environment> get_enclosing() { return enclosing; }
 };
 
 #endif // __ENVIRONMENT_H

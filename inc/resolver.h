@@ -77,6 +77,7 @@ public:
     void visit_get_expr(std::shared_ptr<Get_expr> expr) override;
     void visit_set_expr(std::shared_ptr<Set_expr> expr) override;
     void visit_this_expr(std::shared_ptr<This_expr> expr) override;
+    void visit_super_expr(std::shared_ptr<Super_expr> expr) override;
 
     // Resolve a list of statements.
     void resolve(std::list<std::shared_ptr<Stmt>>& statements);

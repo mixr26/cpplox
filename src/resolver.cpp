@@ -140,6 +140,21 @@ void Resolver::visit_class_stmt(std::shared_ptr<Class_stmt> stmt) {
     declare(stmt->get_name());
     define(stmt->get_name());
 
+    if (stmt->get_superclass()
+        && (stmt->get_name()->get_lexeme()
+            == stmt->get_superclass()->get_name()->get_lexeme()))
+        error_handling::error(stmt->get_superclass()->get_name(),
+                              "A class can't inherit from itself!");
+
+    if (stmt->get_superclass())
+        resolve(stmt->get_superclass());
+
+    if (stmt->get_superclass()) {
+        begin_scope();
+        auto& top = scopes.back();
+        top["super"] = true;
+    }
+
     begin_scope();
     auto& top_scope = scopes.back();
     top_scope["this"] = true;
@@ -152,6 +167,9 @@ void Resolver::visit_class_stmt(std::shared_ptr<Class_stmt> stmt) {
     }
 
     end_scope();
+
+    if (stmt->get_superclass())
+        end_scope();
 
     current_class = enclosing_class;
 }
@@ -218,5 +236,9 @@ void Resolver::visit_this_expr(std::shared_ptr<This_expr> expr) {
         error_handling::error(expr->get_keyword(),
                               "Can't use 'this' outside of a class!");
 
+    resolve_local(expr, expr->get_keyword());
+}
+
+void Resolver::visit_super_expr(std::shared_ptr<Super_expr> expr) {
     resolve_local(expr, expr->get_keyword());
 }

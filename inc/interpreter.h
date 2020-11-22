@@ -44,6 +44,8 @@ class Interpreter : public Expr_visitor,
     std::shared_ptr<Callable> get_callable(Literal &callee, std::shared_ptr<Token> parent);
     // Get the Instance class instance.
     std::shared_ptr<Instance> get_instance(Literal& callee, std::shared_ptr<Token> parent);
+    // Get the superclass of a class.
+    std::shared_ptr<Class> get_superclass(Literal& callee, std::shared_ptr<Token> parent);
     // Look up a variable using the resolved depth.
     Literal look_up_variable(std::shared_ptr<Token> name, std::shared_ptr<Expr> expr);
 public:
@@ -67,6 +69,7 @@ public:
     void visit_get_expr(const std::shared_ptr<Get_expr> expr) override;
     void visit_set_expr(const std::shared_ptr<Set_expr> expr) override;
     void visit_this_expr(const std::shared_ptr<This_expr> expr) override;
+    void visit_super_expr(const std::shared_ptr<Super_expr> expr) override;
 
     // Implementation of statement visitor interface.
     void visit_expression_stmt(const std::shared_ptr<Expression_stmt> stmt) override;
